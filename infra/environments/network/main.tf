@@ -19,7 +19,7 @@ module "network" {
   subnets = [
     {
       name                = "llmd-poc-eu"
-      region              = "europe-west4"
+      region              = "europe-west1"
       node_cidr           = "10.10.0.0/20"
       pods_range_name     = "eu-gke-pods"
       pods_cidr           = "10.12.0.0/14"
@@ -28,7 +28,7 @@ module "network" {
     },
     {
       name                = "llmd-poc-us"
-      region              = "us-central1"
+      region              = "us-east1"
       node_cidr           = "10.20.0.0/20"
       pods_range_name     = "us-gke-pods"
       pods_cidr           = "10.24.0.0/14"

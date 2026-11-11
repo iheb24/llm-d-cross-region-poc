@@ -14,8 +14,8 @@ module "cluster" {
   source     = "../../modules/cluster"
   project_id = var.project_id
 
-  region                 = "us-central1"
-  zone                   = "us-central1-a"
+  region                 = "us-east1"
+  zone                   = "us-east1-c"
   cluster_name           = "llmd-poc-us"
   network_name           = "llmd-poc-vpc"
   subnet_name            = "llmd-poc-us"
@@ -24,9 +24,15 @@ module "cluster" {
   master_ipv4_cidr_block = "172.16.0.32/28"
   service_account_id     = "llmd-poc-us-sa"
 
-  # P2: system pool only. GPU pool is added at P5 (Environment B) via:
-  #   gpu_pool_enabled = true
-  gpu_pool_enabled = false
+  # P5 (2026-11-11): GPU pool enabled for Environment B (always-warm during
+  # test windows per A16; scale to 0 outside windows).
+  # Capacity ladder (2026-11-11): spot and on-demand g2-standard-8 both
+  # exhausted in us-central1-a -> try spot g2-standard-4 (separate capacity
+  # pool; same 1x L4 24GB GPU, less host CPU/RAM).
+  gpu_spot          = true    # spot-4 capacity confirmed in us-east1-c (probe 2026-11-11)
+  gpu_machine_type  = "g2-standard-4"
+  gpu_min_node_count = 1
+  gpu_pool_enabled  = true
 
   authorized_ip_ranges = [
     {
@@ -40,12 +46,12 @@ module "cluster" {
 resource "google_compute_address" "gateway" {
   name    = "llmd-poc-us-gw"
   project = var.project_id
-  region  = "us-central1"
+  region  = "us-east1"
 }
 
 # Hub gateway address (client-facing entry point for hub-routed traffic).
 resource "google_compute_address" "hub_gateway" {
   name    = "llmd-poc-hub-gw"
   project = var.project_id
-  region  = "us-central1"
+  region  = "us-east1"
 }
