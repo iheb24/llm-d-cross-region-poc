@@ -1,0 +1,30 @@
+# Regional EndpointPickerConfig (DRAFT — reviewed at G1, first applied at P3).
+#
+# Stock llm-d v1.0.0 regional profile: candidates are local model-server pods
+# (Env A: 2 llm-d-inference-sim replicas; Env B: vLLM). Basis: the routerlib
+# chart default profile (config/charts/routerlib/templates/_config.yaml @
+# llm-d-router v1.0.0), plus the stock session-affinity filter for T7.
+#
+# The regional EPP exports the pool aggregates the hub scrapes
+# (llm_d_epp_average_queue_size, llm_d_epp_average_kv_cache_utilization —
+# pkg/epp/metrics/llm_d_router_metrics.go). Its /metrics endpoint is served
+# over mTLS for the hub's cross-cluster scrape (B3; flags per #1918 — exact
+# chart values validated at P3).
+apiVersion: llm-d.ai/v1
+kind: EndpointPickerConfig
+plugins:
+  - type: queue-scorer
+  - type: kv-cache-utilization-scorer
+  - type: prefix-cache-scorer
+  - type: session-affinity-filter        # T7 regional stickiness (x-session-token)
+  - type: metrics-data-source
+    parameters:
+      scheme: http                       # cluster-local pod scrapes (B4)
+      path: /metrics
+      insecureSkipVerify: true
+  - type: core-metrics-extractor
+  - type: max-score-picker
+  - type: single-profile-handler
+# schedulingProfiles: default (scorers above). Sim pods in Env A are scraped
+# the same way; sim metric fidelity vs. core-metrics-extractor is verified at
+# P3 (G1 item 9 residual check).

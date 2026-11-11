@@ -1,0 +1,39 @@
+# versions.lock — single source of truth for pinned versions.
+# Frozen at P1 (gate G1), 2026-11-11. Any change reopens G1 for the delta.
+# Evidence for each pin: docs/version-evidence.md.
+
+llm-d:
+  release: "v1.0.0"                      # umbrella release, 2026-10-19
+  router:
+    source_repo: "github.com/llm-d/llm-d-router"
+    source_tag: "v1.0.0"                 # tag commit b9393d1a9f1d5a72ecd86f8d2b643ab54c2a9b92
+    epp_image: "ghcr.io/llm-d/llm-d-router-endpoint-picker:v1.0.0"
+    chart_gateway: "oci://ghcr.io/llm-d/charts/llm-d-router-gateway"
+    chart_standalone: "oci://ghcr.io/llm-d/charts/llm-d-router-standalone"
+    chart_version: "v1.0.0"
+  inference_sim_image: "ghcr.io/llm-d/llm-d-inference-sim:v1.0.0"
+  autoscaling_chart_version: "v1.0.0"    # P7 only
+  inference_perf: "v0.7.0"               # load generator (T3/T9)
+
+gateway:
+  gateway_api_crds: "v1.6.2"             # llm-d/llm-d guides/env.sh @ release-1.0
+  gaie_crds: "v1.6.2"                    # api group inference.networking.k8s.io
+  provider: "envoy-ai-gateway"           # G1 decision, version-evidence.md item 8
+  envoy_gateway: "v1.8.1"                # llm-d v1.0.0 infra matrix; also proven in vllm-gke
+  envoy_ai_gateway: "v0.7.0"             # llm-d v1.0.0 infra matrix (vllm-gke used v1.0.0 — skew recorded)
+
+model_server:
+  image: "docker.io/vllm/vllm-openai:v0.30.0"
+  model: "Qwen/Qwen2.5-Coder-14B-Instruct-AWQ"
+  model_revision: "eb3172f06a6d6b3a15f08947b0668d782e4d2d2c"  # HF main, lastModified 2025-01-12
+  quantization: "awq"
+
+autoscaling:                             # P7 only — confirm exact versions at P7 entry
+  keda_chart_version: "TBD-at-P7"
+
+kubernetes:
+  gke_version: "TBD-at-P2"               # record exact; must run Gateway API v1.6.2 + GAIE v1.6.2 CRDs
+
+terraform:
+  core: ">= 1.0"                         # exact binary version recorded at P2
+  google_provider: "7.41.0"              # inherited from vllm-gke .terraform.lock.hcl; re-pin at P2

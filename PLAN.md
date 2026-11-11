@@ -103,11 +103,11 @@ Nothing below is treated as fact until its resolution gate closes it. IDs are re
 | A2 | PoC deploys into the **same GCP project** as `vllm-gke` but a **new dedicated VPC**; existing stack untouched | Open | P2 entry (user confirmation) |
 | A3 | US cluster in `us-central1-a` (known Spot L4 capacity); EU cluster defaults to `europe-west4-a` | Open | P2 entry: L4 quota + Spot availability check in both zones; pick fallback EU zone if needed |
 | A4 | Hub colocated in the **US** cluster (single hub, no HA — documented limitation) | Decided (context §6) | — |
-| A5 | Gateway provider: **Envoy Gateway v1.8.1** on both spokes (matches baseline experience and the llm-d v1.0.0 release matrix); GKE-managed gateway is the documented alternative | Open | G1 item 8 |
-| A6 | Envoy **AI** Gateway is **not** in the request path (llm-d proxy serves the OpenAI-compatible API; EPP serves aggregated `/v1/models` in v1.0.0) | Open | G1 item 8 |
-| A7 | `llm-d-inference-sim` telemetry (queue/KV metrics, configurable latency) is sufficient for hub scorers and T-tests | Open | G1 item 9, proven in P3 |
-| A8 | Weighted regional routing is expressible in EPPConfig v1 (scorer weights or equivalent) | Open | G1 item 3 |
-| A9 | Deterministic region forcing is done via **hub configuration** (scheduling profile/config swap), not request fields — v1.0.0 strips client-supplied routing headers (router #3090) | Open | G1 item 3 |
+| A5 | Gateway provider: **Envoy AI Gateway v0.7.0 on Envoy Gateway v1.8.1** (llm-d v1.0.0 matrix versions; plain Envoy Gateway is not a documented llm-d provider; GKE Gateway = documented fallback) | **Resolved (G1 item 8)** | version-evidence.md §8 |
+| A6 | Envoy AI Gateway **is** the documented Envoy-based gateway provider and is in the request path as the GAIE gateway; no semantic routing added | **Resolved (G1 item 8)** | version-evidence.md §8 |
+| A7 | `llm-d-inference-sim` telemetry (queue/KV metrics, configurable latency, failure injection) is sufficient for hub scorers and T-tests | Doc-level pass (G1 item 9); live metric-fidelity check remains | P3 exit |
+| A8 | Weighted regional routing: `endpoint-attribute-weight-scorer` (region weights) + `weighted-random-picker` (score-proportional sampling) | **Resolved (G1 item 3)** | version-evidence.md §3 |
+| A9 | Deterministic region forcing via **hub EPPConfig swap** (label filter on discovery-file region labels, applied by `helm upgrade`); client-supplied routing headers confirmed stripped in v1.0.0 | **Resolved (G1 item 3)** | version-evidence.md §3 |
 | A10 | One EPP replica per level; EPP HA/active-active (router #3133, #3431) out of scope | Decided | — |
 | A11 | Model stays `Qwen/Qwen2.5-Coder-14B-Instruct-AWQ` on one L4 per region, pinned to an immutable Hugging Face revision; identical tokenizer/chat-template/quantization/context/prefix-cache settings in both regions | Open | P1 (record revision SHA in `versions.lock`) |
 | A12 | Cross-cluster addressing: reserved static IPs + DNS names for regional gateways (Cloud DNS or equivalent) | Open | P2 |
@@ -395,7 +395,7 @@ Mechanisms:
 | R12 | Simulator telemetry drifts from real vLLM behavior | A7 gated at G1/P3; all functional conclusions re-spot-checked on Env B | Sim-derived timings never reported as real inference performance |
 | R13 | Header stripping (router #3090) breaks a harness assumption | G1 items 3/10 fix the correlation and forcing mechanisms before any test | Custom client headers may be unusable |
 | R14 | Spot L4 preemption mid-measurement | Retry policy; preemption logged as environmental event | Some runs invalidated and repeated |
-| R15 | v1.0.0 multicluster path immature (feature merged 2026-08) | G1 source verification; fallback version path defined (§5) | Bugs found during PoC are filed upstream and documented |
+| R15 | v1.0.0 multicluster path immature: all eight `multicluster-*` plugins are **StabilityAlpha** at v1.0.0 (`cmd/epp/runner/runner.go`) — no backwards-compat guarantee; hub requires `--allow-experimental-plugins` | G1 source verification done; exact pin in `versions.lock`; behavior recorded per run; fallback version path (§5) | Bugs found during PoC are filed upstream and documented |
 | R16 | Metrics cert rotation causes hub blind spots | Restart-based rotation runbook (A13) until upstream hot-reload (#2045/#2151) ships | Brief telemetry gaps during rotation |
 
 ---
