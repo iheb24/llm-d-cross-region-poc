@@ -32,7 +32,7 @@ autoscaling:                             # P7 only — confirm exact versions at
   keda_chart_version: "TBD-at-P7"
 
 kubernetes:
-  gke_version: "TBD-at-P2"               # record exact; must run Gateway API v1.6.2 + GAIE v1.6.2 CRDs
+  gke_version: "v1.36.4-gke.2377000"     # recorded at P2 apply (2026-11-11); both clusters identical
 
 terraform:
   core: ">= 1.0"                         # exact binary version recorded at P2

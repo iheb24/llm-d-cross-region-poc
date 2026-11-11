@@ -1,0 +1,22 @@
+{
+  "cluster_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "llmd-poc-eu"
+  },
+  "gateway_ip": {
+    "sensitive": false,
+    "type": "string",
+    "value": "34.34.96.149"
+  },
+  "get_credentials_command": {
+    "sensitive": false,
+    "type": "string",
+    "value": "gcloud container clusters get-credentials llmd-poc-eu --zone europe-west4-a --project project-c4f86d90-75ff-4766-8cd"
+  },
+  "zone": {
+    "sensitive": false,
+    "type": "string",
+    "value": "europe-west4-a"
+  }
+}

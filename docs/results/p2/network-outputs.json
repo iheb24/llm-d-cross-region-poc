@@ -1,0 +1,21 @@
+{
+  "network_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "llmd-poc-vpc"
+  },
+  "subnet_names": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "llmd-poc-eu": "string",
+        "llmd-poc-us": "string"
+      }
+    ],
+    "value": {
+      "llmd-poc-eu": "llmd-poc-eu",
+      "llmd-poc-us": "llmd-poc-us"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "cluster_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "llmd-poc-us"
+  },
+  "gateway_ip": {
+    "sensitive": false,
+    "type": "string",
+    "value": "34.70.139.142"
+  },
+  "get_credentials_command": {
+    "sensitive": false,
+    "type": "string",
+    "value": "gcloud container clusters get-credentials llmd-poc-us --zone us-central1-a --project project-c4f86d90-75ff-4766-8cd"
+  },
+  "hub_gateway_ip": {
+    "sensitive": false,
+    "type": "string",
+    "value": "146.148.64.26"
+  },
+  "zone": {
+    "sensitive": false,
+    "type": "string",
+    "value": "us-central1-a"
+  }
+}

@@ -373,7 +373,7 @@ Mechanisms:
 - **Cross-cluster telemetry:** mTLS for hub→spoke metrics (upstream defaults to server verification, router #2232); certificates provisioned per A13 with a documented rotation procedure (restart-based until upstream hot-reload ships); least-privilege scrape path (metrics port only).
 - **Data movement:** hub→spoke requests move prompt data across EU/US jurisdictions; this PoC makes **no data-residency claim**; synthetic test prompts only; noted in the final report.
 - **Quota:** L4 GPU quota verified in both zones at P2 entry (and re-verified at P5); Spot preemption handled by test retry policy and recorded as an environmental event, not a routing failure.
-- **Cost:** zonal clusters (free control plane); always-on cost ≈ 2 × `e2-standard-4`; GPUs warm only during scheduled test windows, scaled to 0 otherwise (A16); KEDA phase is the cost-optimization evaluation, not a prerequisite; WAN egress measured (VPC flow logs / billing export) and reported; budget alert configured at P2; full teardown verified at P8.
+- **Cost:** zonal clusters (free control plane); always-on cost ≈ 2 × `e2-standard-4`; GPUs warm only during scheduled test windows, scaled to 0 otherwise (A16); KEDA phase is the cost-optimization evaluation, not a prerequisite; WAN egress measured (VPC flow logs / billing export) and reported; budget alert configured at P2; full teardown verified at P8. **User constraint (2026-11-11): every test window — including waits — is capped at 30 minutes** to protect both token and GCP budgets; load tests, GPU warm windows, and failure-injection runs are sized and split accordingly, and long-running operations are parallelized where safe.
 
 ---
 
