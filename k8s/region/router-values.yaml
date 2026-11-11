@@ -1,0 +1,68 @@
+# Regional llm-d router (EPP) — llm-d-router-gateway chart v1.0.0, both regions.
+# EPP image pinned (chart default is 'main'). session-affinity-filter is
+# StabilityAlpha at v1.0.0 -> allow-experimental-plugins is required.
+# inferencePool.failureMode: FailOpen is the chart default — recorded for T4
+# (risk R11: requests may fail open past a down EPP; detection must rely on
+# decision evidence, not request success).
+provider:
+  name: none   # Envoy AI Gateway is provisioned separately (k8s/region-*/gateway.yaml)
+
+httpRoute:
+  create: true
+  inferenceGatewayName: llm-d-inference-gateway
+  requestTimeout: "300s"
+
+router:
+  modelServers:
+    type: vllm
+    protocol: http
+    targetPorts:
+      - number: 8000
+    matchLabels:
+      app: llmd-sim
+
+  inferencePool:
+    create: true
+    failureMode: FailOpen
+
+  monitoring:
+    provider:
+      name: gmp
+      gmp:
+        autopilot: false
+    interval: "15s"
+
+  epp:
+    replicas: 1
+    image:
+      tag: "v1.0.0"
+    flags:
+      v: 2
+      emit-endpoint-scores: true
+      allow-experimental-plugins: true
+    pluginsConfig:
+      apiVersion: llm-d.ai/v1
+      kind: EndpointPickerConfig
+      plugins:
+        - type: queue-scorer
+        - type: kv-cache-utilization-scorer
+        - type: prefix-cache-scorer
+        - type: session-affinity-filter
+        - type: metrics-data-source
+          parameters:
+            scheme: http
+            path: /metrics
+            insecureSkipVerify: true
+        - type: core-metrics-extractor
+        - type: weighted-random-picker
+        - type: single-profile-handler
+      schedulingProfiles:
+        - name: default
+          plugins:
+            - pluginRef: queue-scorer
+              weight: 2
+            - pluginRef: kv-cache-utilization-scorer
+              weight: 2
+            - pluginRef: prefix-cache-scorer
+              weight: 3
+            - pluginRef: session-affinity-filter

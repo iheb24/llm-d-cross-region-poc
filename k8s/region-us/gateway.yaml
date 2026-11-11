@@ -1,0 +1,31 @@
+# US regional gateway (Envoy AI Gateway provider). Bound to the reserved static
+# IP from P2 (infra/environments/us: llmd-poc-us-gw). Independently reachable —
+# direct-spoke latency baselines use this address.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: llm-d-inference-gateway
+  namespace: llmd-serving
+spec:
+  gatewayClassName: envoy-ai-gateway
+  addresses:
+    - type: IPAddress
+      value: 34.70.139.142
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+---
+# Envoy Gateway's default 32kiB buffer is too small for AI workloads (llm-d recipe).
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: client-buffer-limit
+  namespace: llmd-serving
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: llm-d-inference-gateway
+  connection:
+    bufferLimit: 50Mi
