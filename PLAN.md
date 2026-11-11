@@ -100,8 +100,8 @@ Nothing below is treated as fact until its resolution gate closes it. IDs are re
 | ID | Assumption / default | Status | Resolved by |
 |---|---|---|---|
 | A1 | Repo lives at `/Users/ihebbesbes/workspace/llm-d-cross-region-poc`, local git only; pushing a remote needs separate approval | Decided | — |
-| A2 | PoC deploys into the **same GCP project** as `vllm-gke` but a **new dedicated VPC**; existing stack untouched | Open | P2 entry (user confirmation) |
-| A3 | US cluster in `us-central1-a` (known Spot L4 capacity); EU cluster defaults to `europe-west4-a` | Open | P2 entry: L4 quota + Spot availability check in both zones; pick fallback EU zone if needed |
+| A2 | PoC deploys into the **same GCP project** as `vllm-gke` but a **new dedicated VPC** (`llmd-poc-vpc`); existing stack untouched | **Resolved (user, 2026-11-11)** | — |
+| A3 | US cluster in `us-central1-a`; EU cluster in `europe-west4-a`; L4 quota in both regions confirmed by user 2026-11-11; Spot capacity at allocation time remains a runtime risk (R14) | **Resolved (user, 2026-11-11)** | — |
 | A4 | Hub colocated in the **US** cluster (single hub, no HA — documented limitation) | Decided (context §6) | — |
 | A5 | Gateway provider: **Envoy AI Gateway v0.7.0 on Envoy Gateway v1.8.1** (llm-d v1.0.0 matrix versions; plain Envoy Gateway is not a documented llm-d provider; GKE Gateway = documented fallback) | **Resolved (G1 item 8)** | version-evidence.md §8 |
 | A6 | Envoy AI Gateway **is** the documented Envoy-based gateway provider and is in the request path as the GAIE gateway; no semantic routing added | **Resolved (G1 item 8)** | version-evidence.md §8 |
