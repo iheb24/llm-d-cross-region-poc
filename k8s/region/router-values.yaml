@@ -31,11 +31,26 @@ router:
       gmp:
         autopilot: false
     interval: "15s"
+    prometheus:
+      enabled: true
+      auth:
+        # PoC: EPP /metrics is ClusterIP-only; unauthenticated scrape keeps GMP
+        # simple. The hub's cross-cluster scrape gets a secured exposure at P4
+        # (trust boundary B3) — this flag does not weaken that boundary.
+        enabled: false
 
   epp:
     replicas: 1
     image:
       tag: "v1.0.0"
+    # Chart defaults (cpu 8 / mem 8Gi req) exceed the e2-standard-4 system node;
+    # PoC-sized for a 2-endpoint pool.
+    resources:
+      requests:
+        cpu: "500m"
+        memory: 1Gi
+      limits:
+        memory: 2Gi
     flags:
       v: 2
       emit-endpoint-scores: true

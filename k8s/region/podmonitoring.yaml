@@ -1,0 +1,29 @@
+# Per-cluster metrics collection (A14): Google Managed Prometheus, cluster-scoped
+# (these zonal clusters ship clusterpodmonitorings.monitoring.googleapis.com only; label selectors are unique to llmd-serving, so no namespace selector).
+# EPP pool aggregates (llm_d_epp_average_*) feed the hub's multicluster scrape
+# design (B3); sim metrics back the Env-A functional evidence.
+apiVersion: monitoring.googleapis.com/v1
+kind: ClusterPodMonitoring
+metadata:
+  name: llmd-epp-metrics
+spec:
+  selector:
+    matchLabels:
+      llm-d-router-gateway: llmd-router-epp
+  endpoints:
+    - port: 9090
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: ClusterPodMonitoring
+metadata:
+  name: llmd-sim-metrics
+spec:
+  selector:
+    matchLabels:
+      app: llmd-sim
+  endpoints:
+    - port: 8000
+      path: /metrics
+      interval: 15s

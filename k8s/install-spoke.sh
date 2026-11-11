@@ -8,6 +8,14 @@ set -euo pipefail
 CTX="${1:?usage: install-spoke.sh <kubectl-context>}"
 K="kubectl --context ${CTX}"
 
+# helm's OCI client honors docker's credsStore; docker-credential-desktop is not
+# on PATH in this shell. Public charts need no auth — point helm at an empty
+# docker config so it skips the credential helper entirely.
+export DOCKER_CONFIG="${DOCKER_CONFIG:-$(mktemp -d)}"
+if [ ! -s "${DOCKER_CONFIG}/config.json" ]; then
+  echo '{}' > "${DOCKER_CONFIG}/config.json"
+fi
+
 # Pinned (versions.lock)
 GATEWAY_API_VERSION=v1.6.2
 GAIE_VERSION=v1.6.2

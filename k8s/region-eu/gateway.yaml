@@ -1,6 +1,6 @@
 # EU regional gateway (Envoy AI Gateway provider). Bound to the reserved static
-# IP from P2 (infra/environments/eu: llmd-poc-eu-gw). Independently reachable —
-# direct-spoke latency baselines use this address.
+# IP from P2 via the GatewayClass EnvoyProxy (region-eu/envoyproxy.yaml) —
+# Gateway spec.addresses does NOT work on GKE (externalIPs denied).
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -8,9 +8,6 @@ metadata:
   namespace: llmd-serving
 spec:
   gatewayClassName: envoy-ai-gateway
-  addresses:
-    - type: IPAddress
-      value: 34.34.96.149
   listeners:
     - name: http
       protocol: HTTP

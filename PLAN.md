@@ -105,14 +105,14 @@ Nothing below is treated as fact until its resolution gate closes it. IDs are re
 | A4 | Hub colocated in the **US** cluster (single hub, no HA — documented limitation) | Decided (context §6) | — |
 | A5 | Gateway provider: **Envoy AI Gateway v0.7.0 on Envoy Gateway v1.8.1** (llm-d v1.0.0 matrix versions; plain Envoy Gateway is not a documented llm-d provider; GKE Gateway = documented fallback) | **Resolved (G1 item 8)** | version-evidence.md §8 |
 | A6 | Envoy AI Gateway **is** the documented Envoy-based gateway provider and is in the request path as the GAIE gateway; no semantic routing added | **Resolved (G1 item 8)** | version-evidence.md §8 |
-| A7 | `llm-d-inference-sim` telemetry (queue/KV metrics, configurable latency, failure injection) is sufficient for hub scorers and T-tests | Doc-level pass (G1 item 9); live metric-fidelity check remains | P3 exit |
+| A7 | `llm-d-inference-sim` telemetry is sufficient: regional EPP exports `llm_d_epp_average_queue_size` / `llm_d_epp_average_kv_cache_utilization` and per-endpoint sim metrics (P3 live check) | **Resolved (P3)** | results/p3 |
 | A8 | Weighted regional routing: `endpoint-attribute-weight-scorer` (region weights) + `weighted-random-picker` (score-proportional sampling) | **Resolved (G1 item 3)** | version-evidence.md §3 |
 | A9 | Deterministic region forcing via **hub EPPConfig swap** (label filter on discovery-file region labels, applied by `helm upgrade`); client-supplied routing headers confirmed stripped in v1.0.0 | **Resolved (G1 item 3)** | version-evidence.md §3 |
 | A10 | One EPP replica per level; EPP HA/active-active (router #3133, #3431) out of scope | Decided | — |
 | A11 | Model stays `Qwen/Qwen2.5-Coder-14B-Instruct-AWQ` on one L4 per region, pinned to an immutable Hugging Face revision; identical tokenizer/chat-template/quantization/context/prefix-cache settings in both regions | Open | P1 (record revision SHA in `versions.lock`) |
 | A12 | Cross-cluster addressing: reserved static IPs + DNS names for regional gateways (Cloud DNS or equivalent) | Open | P2 |
 | A13 | TLS: hub→spoke-gateway HTTPS and hub→spoke-EPP mTLS metrics; issuer (cert-manager vs Google-managed) undecided; cert rotation requires EPP restart until upstream hot-reload (router #2045/#2151) ships | Open | G1 item 5 / P2 |
-| A14 | Metrics collection: per-cluster Prometheus (GKE Managed Prometheus preferred if it can scrape the EPP metrics endpoint with TLS) | Open | P3 |
+| A14 | Metrics collection: GKE Managed Prometheus enabled on both clusters; `ClusterPodMonitoring` scrapes EPP (:9090) and sims (:8000); EPP `/metrics` runs unauthenticated on ClusterIP (secured cross-cluster exposure deferred to P4/B3) | **Resolved (P3)** | results/p3 |
 | A15 | T9 clients: one GCE VM (or equivalent) per region, EU + US, as controlled client locations | Open | P6 |
 | A16 | Always-warm means: GPU node present and vLLM `replicas: 1` during test windows; GPU pools scale to 0 outside test windows | Decided | — |
 
