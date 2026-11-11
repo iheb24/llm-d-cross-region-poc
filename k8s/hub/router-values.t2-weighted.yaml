@@ -1,0 +1,104 @@
+# T2 — weighted regional routing: static region weights (eu 8 / us 2) via
+# label-producer -> endpoint-attribute-weight-scorer -> weighted-random-picker.
+# Queue/KV scorers removed so the split reflects weights alone (both regions
+# healthy and idle during T2, per PLAN.md §7).
+provider:
+  name: none
+
+httpRoute:
+  create: true
+  inferenceGatewayName: llmd-hub-gateway
+  requestTimeout: "300s"
+
+router:
+  modelServers:
+    type: vllm
+    protocol: http
+    targetPorts:
+      - number: 80
+    matchLabels:
+      app: llmd-hub-no-pods
+
+  inferencePool:
+    create: true
+    failureMode: FailOpen
+
+  monitoring:
+    provider:
+      name: gmp
+      gmp:
+        autopilot: false
+    interval: "15s"
+    prometheus:
+      enabled: true
+      auth:
+        enabled: false
+
+  epp:
+    replicas: 1
+    image:
+      tag: "v1.0.0"
+    resources:
+      requests:
+        cpu: "500m"
+        memory: 1Gi
+      limits:
+        memory: 2Gi
+    flags:
+      v: 2
+      emit-endpoint-scores: true
+      allow-experimental-plugins: true
+    volumes:
+      - name: hub-clusters
+        configMap:
+          name: llmd-hub-clusters
+    volumeMounts:
+      - name: hub-clusters
+        mountPath: /etc/epp
+    pluginsConfig:
+      apiVersion: llm-d.ai/v1
+      kind: EndpointPickerConfig
+      plugins:
+        - type: multicluster-file-discovery
+          name: discovery
+          parameters:
+            path: /etc/epp/clusters.yaml
+            watchFile: true
+        - type: multicluster-metrics-data-source
+          name: metrics-source
+          parameters:
+            scheme: http
+        - type: multicluster-metrics-extractor
+          name: metrics-extractor
+        - type: multicluster-session-affinity-filter
+          name: session-affinity
+        - type: label-producer
+          name: endpoint-labels
+          parameters:
+            labels:
+              - label: region
+                attributeKey: region
+        - type: endpoint-attribute-weight-scorer
+          name: region-weight
+          parameters:
+            attributeKey: region
+            producer: endpoint-labels
+            weights:
+              eu: 8
+              us: 2
+        - type: weighted-random-picker
+        - type: single-profile-handler
+      dataLayer:
+        discovery:
+          endpoints:
+            pluginRef: discovery
+        sources:
+          - pluginRef: metrics-source
+            extractors:
+              - pluginRef: metrics-extractor
+      schedulingProfiles:
+        - name: default
+          plugins:
+            - pluginRef: session-affinity
+            - pluginRef: region-weight
+              weight: 1

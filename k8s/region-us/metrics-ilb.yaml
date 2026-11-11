@@ -1,0 +1,19 @@
+# US: same VPC-internal metrics exposure as the EU (symmetric wiring, robust to
+# future hub relocation). See region-eu/metrics-ilb.yaml for the B3 rationale.
+apiVersion: v1
+kind: Service
+metadata:
+  name: llmd-router-epp-metrics-ilb
+  namespace: llmd-serving
+  annotations:
+    networking.gke.io/load-balancer-type: "Internal"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.20.0.100
+  selector:
+    llm-d-router-gateway: llmd-router-epp
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: 9090

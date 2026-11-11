@@ -1,0 +1,106 @@
+# Hub llm-d router (EPP) — llm-d-router-gateway chart v1.0.0, US cluster.
+# Cluster-scoped scheduling: candidates are the regional gateways (file
+# discovery), NOT pods — the InferencePool selector deliberately matches nothing.
+# ALL multicluster-* plugins are StabilityAlpha at v1.0.0
+# (-> allow-experimental-plugins; PLAN.md R15).
+#
+# Env-A telemetry plane (B3): multicluster-metrics-data-source uses scheme http
+# against VPC-internal ILB addresses (network-contained; mTLS hardening deferred).
+provider:
+  name: none
+
+httpRoute:
+  create: true
+  inferenceGatewayName: llmd-hub-gateway
+  requestTimeout: "300s"
+
+router:
+  modelServers:
+    type: vllm
+    protocol: http
+    targetPorts:
+      - number: 80
+    matchLabels:
+      app: llmd-hub-no-pods   # intentional: hub selects clusters, not pods
+
+  inferencePool:
+    create: true
+    failureMode: FailOpen
+
+  monitoring:
+    provider:
+      name: gmp
+      gmp:
+        autopilot: false
+    interval: "15s"
+    prometheus:
+      enabled: true
+      auth:
+        enabled: false
+
+  epp:
+    replicas: 1
+    image:
+      tag: "v1.0.0"
+    resources:
+      requests:
+        cpu: "500m"
+        memory: 1Gi
+      limits:
+        memory: 2Gi
+    flags:
+      v: 2
+      emit-endpoint-scores: true
+      allow-experimental-plugins: true
+    volumes:
+      - name: hub-clusters
+        configMap:
+          name: llmd-hub-clusters
+    volumeMounts:
+      - name: hub-clusters
+        mountPath: /etc/epp
+    pluginsConfig:
+      apiVersion: llm-d.ai/v1
+      kind: EndpointPickerConfig
+      plugins:
+        - type: multicluster-file-discovery
+          name: discovery
+          parameters:
+            path: /etc/epp/clusters.yaml
+            watchFile: true
+        - type: multicluster-metrics-data-source
+          name: metrics-source
+          parameters:
+            scheme: http
+        - type: multicluster-metrics-extractor
+          name: metrics-extractor
+        - type: multicluster-session-affinity-filter
+          name: session-affinity
+        - type: multicluster-queue-scorer
+          name: queue
+        - type: multicluster-kv-cache-utilization-scorer
+          name: kv-cache
+        - type: label-selector-filter
+          name: force-region
+          parameters:
+            matchLabels:
+              region: eu
+        - type: max-score-picker
+        - type: single-profile-handler
+      dataLayer:
+        discovery:
+          endpoints:
+            pluginRef: discovery
+        sources:
+          - pluginRef: metrics-source
+            extractors:
+              - pluginRef: metrics-extractor
+      schedulingProfiles:
+        - name: default
+          plugins:
+            - pluginRef: force-region
+            - pluginRef: queue
+              weight: 1
+            - pluginRef: kv-cache
+              weight: 1
+            - pluginRef: session-affinity

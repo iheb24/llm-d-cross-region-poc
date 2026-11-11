@@ -1,26 +1,23 @@
-# Hub discovery file (DRAFT — reviewed at G1, first applied at P4).
-# Consumed by the hub EPP's multicluster-file-discovery plugin (mounted at
-# /etc/epp/clusters.yaml). Format: pkg/epp/framework/plugins/datalayer/discovery/file
-# @ llm-d-router v1.0.0. Addresses may be RFC-1123 hostnames or IPs.
-# watchFile: true in the EPP config hot-reloads this file (fsnotify), so failure
-# injection and destination changes do not require an EPP restart.
+# Hub discovery file — regional gateways as cluster endpoints (P4 live values).
+# Mounted into the hub EPP at /etc/epp/clusters.yaml via ConfigMap
+# (k8s/hub/clusters-configmap.yaml); watchFile: true hot-reloads edits.
+# address = regional gateway data plane (hub forwards requests here).
+# metricsAddress/metricsPort = regional EPP pool-aggregate scrape target
+# (VPC-internal ILB; see k8s/region-*/metrics-ilb.yaml).
 endpoints:
   - name: eu
     namespace: llmd-poc
-    # Regional gateway hostname (TBD at P2: reserved static IP + DNS).
-    address: eu-gateway.llmd-poc.example.com
-    port: "443"
+    address: 34.34.96.149
+    port: "80"
     labels:
       region: eu
-      # Pool-aggregate metrics are scraped from the regional EPP, which may live
-      # behind a different host/port than the gateway (metricsHostFromLabels).
-      metricsAddress: eu-epp-metrics.llmd-poc.example.com
-      metricsPort: "443"
+      metricsAddress: 10.10.0.100
+      metricsPort: "9090"
   - name: us
     namespace: llmd-poc
-    address: us-gateway.llmd-poc.example.com
-    port: "443"
+    address: 34.70.139.142
+    port: "80"
     labels:
       region: us
-      metricsAddress: us-epp-metrics.llmd-poc.example.com
-      metricsPort: "443"
+      metricsAddress: 10.20.0.100
+      metricsPort: "9090"

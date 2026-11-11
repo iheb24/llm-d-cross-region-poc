@@ -1,0 +1,21 @@
+# EU: expose the regional EPP's /metrics to the hub cluster via a VPC-internal
+# LoadBalancer (both clusters share llmd-poc-vpc; subnet ranges are routable).
+# Env-A telemetry boundary (B3): network-contained, no auth — mTLS client-cert
+# hardening is deferred (tracked in docs/results/p4 backlog).
+apiVersion: v1
+kind: Service
+metadata:
+  name: llmd-router-epp-metrics-ilb
+  namespace: llmd-serving
+  annotations:
+    networking.gke.io/load-balancer-type: "Internal"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.10.0.100
+  selector:
+    llm-d-router-gateway: llmd-router-epp
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: 9090

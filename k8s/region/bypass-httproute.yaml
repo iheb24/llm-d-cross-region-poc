@@ -1,0 +1,27 @@
+# T5 negative control: a /bypass path that reaches the sim Service directly,
+# WITHOUT the regional EPP (no InferencePool backendRef, no ext-proc).
+# Requests through it must show the absence of regional-selection evidence
+# (no x-inference-pod header) — proving that the two-level evidence chain
+# requires both EPPs in the path. Not used by any other test.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: sim-direct-bypass
+  namespace: llmd-serving
+spec:
+  parentRefs:
+    - name: llm-d-inference-gateway
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /bypass
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: llmd-sim
+          port: 8000

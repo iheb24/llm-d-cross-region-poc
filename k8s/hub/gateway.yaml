@@ -1,0 +1,49 @@
+# Hub client-facing gateway (US cluster), bound to the reserved hub IP.
+# The regional US gateway keeps the class-level EnvoyProxy binding; this file
+# binds the hub IP per-Gateway via spec.infrastructure.parametersRef.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: poc-hub-proxy-config
+  namespace: llmd-serving   # Gateway infrastructure.parametersRef has no
+                           # namespace field in Gateway API v1 — same namespace.
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyService:
+        patch:
+          type: StrategicMerge
+          value:
+            spec:
+              loadBalancerIP: 146.148.64.26
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: llmd-hub-gateway
+  namespace: llmd-serving
+spec:
+  gatewayClassName: envoy-ai-gateway
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: poc-hub-proxy-config
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: hub-client-buffer-limit
+  namespace: llmd-serving
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: llmd-hub-gateway
+  connection:
+    bufferLimit: 50Mi
