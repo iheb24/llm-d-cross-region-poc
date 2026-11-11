@@ -1,0 +1,107 @@
+# Environment B: one real vLLM endpoint per region (pinned model revision,
+# identical config both regions per A11). Model storage is regional (50 Gi PVC).
+# The model is public on HF (gated: false) — no token needed; download is cached
+# on the PVC. Sims stay deployed for controls; the pool switch happens via
+# router-values.envB.yaml (matchLabels app=llmd-vllm).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vllm-model-cache
+  namespace: llmd-serving
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: standard-rwo
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llmd-vllm
+  namespace: llmd-serving
+  labels:
+    app: llmd-vllm
+spec:
+  replicas: 1
+  # Single GPU per region (quota 1): surging during rollouts spawns a second
+  # GPU-requesting pod that can never schedule.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: llmd-vllm
+  template:
+    metadata:
+      labels:
+        app: llmd-vllm
+    spec:
+      # GKE GPU nodes carry the nvidia.com/gpu=present:NoSchedule taint;
+      # without this toleration the pod never triggers GPU scale-up.
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+      containers:
+        - name: vllm
+          image: docker.io/vllm/vllm-openai:v0.30.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --model=Qwen/Qwen2.5-Coder-14B-Instruct-AWQ
+            - --revision=eb3172f06a6d6b3a15f08947b0668d782e4d2d2c
+            - --max-model-len=32768
+            - --gpu-memory-utilization=0.95
+            - --enable-prefix-caching
+            # g2-standard-4 has only 16GB host RAM: torch.compile/OOM at the
+            # dynamo stage (exit 137). Eager mode removes the compile-phase
+            # host-RAM spike. Latency numbers (T9) are labeled "eager".
+            - --enforce-eager
+          ports:
+            - name: http
+              containerPort: 8000
+          resources:
+            # g2-standard-4 has 16GB RAM; 12Gi requests blocked scale-up
+            # ("Insufficient memory" in the autoscaler's fit check).
+            requests:
+              cpu: "2"
+              memory: 8Gi
+              nvidia.com/gpu: "1"
+            limits:
+              nvidia.com/gpu: "1"
+              memory: 14Gi
+          volumeMounts:
+            - name: model-cache
+              mountPath: /root/.cache/huggingface
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 60   # model download + load can take several minutes
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 30
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: vllm-model-cache
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llmd-vllm
+  namespace: llmd-serving
+  labels:
+    app: llmd-vllm
+spec:
+  selector:
+    app: llmd-vllm
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP
