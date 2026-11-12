@@ -122,8 +122,8 @@ Nothing below is treated as fact until its resolution gate closes it. IDs are re
 
 ### Components per location
 
-- **US cluster** (`us-central1-a`, proposed): system pool + GPU pool; regional Envoy Gateway; regional EPP; vLLM pool (Env B) or 2 simulators (Env A); **hub EPP**; per-cluster Prometheus.
-- **EU cluster** (`europe-west4-a`, proposed): system pool + GPU pool; regional Envoy Gateway; regional EPP; vLLM pool (Env B) or 2 simulators (Env A); per-cluster Prometheus.
+- **US cluster** (`us-east1-c`): system pool + GPU pool (hybrid Env B: 1× real L4 vLLM); regional Envoy Gateway; regional EPP; **hub EPP**; per-cluster Prometheus.
+- **EU cluster** (`europe-west1-b`): system pool only (hybrid Env B: no GPU); regional Envoy Gateway; regional EPP; 2 simulators; per-cluster Prometheus.
 
 The hub routes to a **regional gateway**, never to a vLLM Pod directly. Each spoke gateway is independently reachable (direct-spoke access preserved for latency baselines). Regional model servers, cache state, telemetry, and scaling remain under regional ownership.
 
@@ -258,14 +258,17 @@ Rules for all phases:
 - **Evidence:** `docs/results/p4/<run-id>/` JSONL + analysis notes per §9.
 - **Rollback:** scale hub deployment to 0; revert discovery/config to last passing commit. **Teardown:** hub `helm uninstall`; spokes remain for re-runs.
 
-### P5 — Environment B: real inference (G3)
+### P5 — Environment B: real inference, hybrid design (G3)
+
+**Adapted 2026-11-12.** Hard constraint (measured 2026-11-11): `GPUS_ALL_REGIONS = 1` project-wide — only one L4 VM can run at a time; a quota increase to ≥2 was requested and **refused by GCP**. The single real endpoint runs in the **US cluster** (hub-colocated); **EU stays on simulators**. Regions moved for capacity: EU `europe-west1-b`, US `us-east1-c` (A3).
 
 - **Depends on:** P4. **First GPU spend.**
-- **Entry:** G2 passed; GPU quota re-verified; explicit approval for GPU costs; model revision frozen (A11).
-- **Actions (per region):** add GPU node pool (Spot `g2-standard-8`, 1×L4, autoscale 0–1; during test windows hold 1 node, `replicas: 1` — always-warm per A16); regional 50 Gi PVC; vLLM `v0.30.0` serving the pinned model with **identical** tokenizer, chat template, quantization, context, and prefix-cache settings in both regions; point the regional InferencePool at the real endpoint (keep simulators available for controls). Tests: direct-spoke baselines (latency/streaming per region); first half of **T9**; **T6** core (fresh long prefix → cold TTFT + cache counters; reuse → verify affinity decision **and** vLLM prefix-cache counter increase; force to other region → cold; repeat → warm), with fresh prefixes or controlled cache resets between trials; via-hub smoke in both directions.
-- **Exit (G3):** real TTFT/streaming evidenced on direct and via-hub paths; T6 pass criteria met with serving-metric confirmation (not TTFT inference alone).
-- **Evidence:** `docs/results/p5/` incl. vLLM cache counters, TTFT/TPOT distributions, route correlation.
-- **Rollback:** scale GPU pools to 0; point pools back at simulators. **Teardown:** delete vLLM releases, PVCs, GPU node pools (keeps clusters).
+- **Entry:** G2 passed; quota constraint recorded; capacity probed in `us-east1-c` on the day; explicit approval for GPU cost; model revision frozen (A11).
+- **Actions:** US GPU pool (spot `g2-standard-4`, min 1 during test windows per A16; **vLLM requires `--enforce-eager` and ≤14 Gi pod memory on 16 GB nodes** — dynamo OOMs otherwise); regional 50 Gi PVC; vLLM `v0.30.0` serving the pinned model revision; point the US regional InferencePool at the real endpoint; EU keeps its 2 sims. Tests: direct-spoke US baselines (latency/streaming); via-hub real (US) and via-hub sim (EU) smoke; **T6 adapted** (fresh long prefix → cold TTFT + real `vllm:prefix_cache_hits_total`; reuse → affinity decision + counter increase; force to EU-sim → cold-reference labeled as sim semantics; force back to US → warm-again), fresh prefixes per trial.
+- **Exit (G3):** real TTFT/streaming evidenced on direct-spoke-US and via-hub paths; T6 pass with serving-metric confirmation.
+- **Evidence:** `docs/results/p5/` incl. vLLM cache counters, TTFT distributions, route correlation, and the hybrid-design caveat list.
+- **Not provable here:** simultaneous dual-GPU behavior; cross-region cold start with real counters; GPU-backed regional pod-level selection (Env A supplies that proof).
+- **Rollback:** scale US GPU pool to 0; point the US pool back at sims. **Teardown:** delete vLLM release/PVC + GPU pool, or full `terraform destroy` (proven twice).
 
 ### P6 — Overload, failure, and affinity on the real stack (G4)
 

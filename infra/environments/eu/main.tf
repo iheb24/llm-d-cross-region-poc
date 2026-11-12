@@ -32,7 +32,7 @@ module "cluster" {
   gpu_spot          = true
   gpu_machine_type  = "g2-standard-4"
   gpu_min_node_count = 1
-  gpu_pool_enabled  = true
+  gpu_pool_enabled  = false  # Env B-hybrid (2026-11-12): GPUS_ALL_REGIONS=1 globally; the single GPU runs in the US cluster
 
   authorized_ip_ranges = [
     {
