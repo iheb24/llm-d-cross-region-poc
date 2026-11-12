@@ -7,6 +7,9 @@ metadata:
   namespace: llmd-serving
   annotations:
     networking.gke.io/load-balancer-type: "Internal"
+    # ILB VIPs are region-local by default; the hub scrapes cross-region,
+    # so the metrics VIP must be reachable from the other cluster's region.
+    networking.gke.io/internal-load-balancer-global-access: "true"
 spec:
   type: LoadBalancer
   loadBalancerIP: 10.20.0.100

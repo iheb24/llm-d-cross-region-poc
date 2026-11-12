@@ -8,6 +8,7 @@ OUT="${1:?output.jsonl}"
 INTERVAL="${2:-2}"
 CASE="${3:-t4}"
 HUB_IP="136.108.168.11"
+MODEL="${MODEL:-llmd-poc-sim}"   # real model: Qwen/Qwen2.5-Coder-14B-Instruct-AWQ
 
 echo "probe-loop: case=${CASE} interval=${INTERVAL}s -> ${OUT} (pid $$)"
 : > "${OUT}"
@@ -17,7 +18,7 @@ while true; do
   start=$(python3 -c 'import time; print(time.time())')
   resp=$(curl -sS -m 15 -i -X POST "http://${HUB_IP}/v1/chat/completions" \
     -H 'Content-Type: application/json' \
-    -d '{"model":"llmd-poc-sim","messages":[{"role":"user","content":"t4 probe"}],"max_tokens":4}' 2>/dev/null || true)
+    -d '{"model":"'$MODEL'","messages":[{"role":"user","content":"t4 probe"}],"max_tokens":4}' 2>/dev/null || true)
   status=$(printf '%s' "$resp" | head -1 | awk '{print $2}')
   token=$(printf '%s' "$resp" | grep -i '^x-session-token:' | awk '{print $2}' | tr -d '\r' || true)
   pod=$(printf '%s' "$resp" | grep -i '^x-inference-pod:' | awk '{print $2}' | tr -d '\r' || true)

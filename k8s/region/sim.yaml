@@ -32,6 +32,10 @@ spec:
             # default context window is 1024 — T6's several-thousand-token
             # prefixes need headroom (sim config: max-model-len)
             - "--max-model-len=8192"
+            - "--served-model-name"
+            - "llmd-poc-sim"
+            - "--served-model-name"
+            - "Qwen/Qwen2.5-Coder-14B-Instruct-AWQ"
           env:
             - name: POD_NAME
               valueFrom:

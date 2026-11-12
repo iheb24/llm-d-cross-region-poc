@@ -1,0 +1,8 @@
+{"turn": "q1", "policy": "default", "hub_region": "eu", "ttft_s": 0.312, "total_s": 0.312, "hits_delta": 0.0, "queries_delta": 0.0, "history_msgs": 3, "ts": "2026-11-12T20:31:41Z"}
+{"turn": "q2", "policy": "default", "hub_region": "eu", "ttft_s": 0.304, "total_s": 0.304, "hits_delta": 0.0, "queries_delta": 0.0, "history_msgs": 5, "ts": "2026-11-12T20:31:43Z"}
+{"turn": "q3", "policy": "default", "hub_region": "eu", "ttft_s": 0.314, "total_s": 0.314, "hits_delta": 0.0, "queries_delta": 0.0, "history_msgs": 7, "ts": "2026-11-12T20:31:45Z"}
+{"turn": "q1", "policy": "default", "hub_region": "us", "ttft_s": 0.337, "total_s": 1.416, "hits_delta": 352.0, "queries_delta": 419.0, "history_msgs": 3, "ts": "2026-11-12T20:36:12Z"}
+{"turn": "q2", "policy": "default", "hub_region": "us", "ttft_s": 0.301, "total_s": 1.388, "hits_delta": 336.0, "queries_delta": 398.0, "history_msgs": 5, "ts": "2026-11-12T20:36:15Z"}
+{"turn": "q3", "policy": "default", "hub_region": "us", "ttft_s": 0.327, "total_s": 1.42, "hits_delta": 384.0, "queries_delta": 441.0, "history_msgs": 7, "ts": "2026-11-12T20:36:19Z"}
+{"turn": "q4", "policy": "force-eu", "hub_region": "eu", "ttft_s": 0.32, "total_s": 0.32, "hits_delta": 0.0, "queries_delta": 0.0, "history_msgs": 9, "ts": "2026-11-12T20:36:38Z"}
+{"turn": "q5", "policy": "default", "hub_region": "us", "ttft_s": 0.316, "total_s": 0.567, "hits_delta": 464.0, "queries_delta": 571.0, "history_msgs": 11, "ts": "2026-11-12T20:37:05Z"}

@@ -11,13 +11,13 @@ endpoints:
     port: "80"
     labels:
       region: eu
-      metricsAddress: 10.10.0.100
-      metricsPort: "9090"
+      metricsAddress: 10.10.0.3
+      metricsPort: "30090"
   - name: us
     namespace: llmd-poc
     address: 34.74.158.67
     port: "80"
     labels:
       region: us
-      metricsAddress: 10.20.0.100
-      metricsPort: "9090"
+      metricsAddress: 10.20.0.3
+      metricsPort: "30090"

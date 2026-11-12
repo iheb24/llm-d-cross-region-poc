@@ -1,0 +1,20 @@
+# US regional EPP metrics exposure for the hub's cross-cluster scrape (B3).
+# ILB VIPs are region-local (and allowGlobalAccess did not enable cross-region
+# reachability on GKE v1.36) -> use a NodePort on the system node instead:
+# node IPs are VPC-routable across the shared llmd-poc-vpc. Scrape target:
+# http://<us-system-node-internal-ip>:30090/metrics (VPC-contained).
+apiVersion: v1
+kind: Service
+metadata:
+  name: llmd-router-epp-metrics-nodeport
+  namespace: llmd-serving
+spec:
+  type: NodePort
+  selector:
+    llm-d-router-gateway: llmd-router-epp
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+      nodePort: 30090
