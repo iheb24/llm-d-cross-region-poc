@@ -1,70 +1,94 @@
-# Resume runbook — after GPU quota approval
+# Rebuild runbook — resume PoC after evening teardown (2026-11-12)
 
-Written 2026-11-11 at teardown. Everything needed is in this repo; a full
-rebuild + revalidation takes ~40 minutes (proven once already during the
-region move).
+Everything needed is in this repo. Full rebuild ≈ 40 min, mostly unattended.
+State at teardown: **Env B-hybrid complete through G4** (P1–P6 done; P7 KEDA
+optional, P8 final report pending). GPU constraint is permanent until quota
+changes: `GPUS_ALL_REGIONS = 1` project-wide → exactly one L4 at a time;
+hybrid design puts it in the US cluster, EU stays on sims.
 
-## Why we tore down
-
-- **Binding constraint:** `GPUS_ALL_REGIONS = 1` **globally** (project-level)
-  — only one L4 VM can exist at a time. Regional quotas are fine
-  (`NVIDIA_L4_GPUS=1`, `PREEMPTIBLE_NVIDIA_L4_GPUS=1` per region).
-  Evidence: autoscaler event `Quota 'GPUS_ALL_REGIONS' exceeded. Limit: 1.0 globally.`
-- Needed for Env B: `GPUS_ALL_REGIONS >= 2` (quota increase submitted by the user 2026-11-11).
-- Capacity note: on 2026-11-11, L4 was exhausted in us-central1-a/b/c/f and
-  europe-west4-a/b/c for both spot and on-demand, g2-standard-8 and -4.
-  Working zones found by probe: **europe-west1-b, us-east1-c** (clusters now
-  point there; re-probe before apply if days pass — zones are cheap to change).
-
-## State at teardown
-
-- Destroyed: both clusters (incl. GPU pools), gateways, static IPs (terraform `destroy` in `eu/`, `us/`, then `network/`).
-- Intact: this repo (terraform, manifests, helm values, scripts, all P1–P4 evidence in `docs/results/`), `vllm-gke` untouched.
-- Lost on rebuild: nothing stateful — sims are stateless; vLLM model weights re-download (~10 GB, ~10 min); IPs change (see step 4).
-
-## Resume steps
+## 0. Pre-flight (2 min)
 
 ```bash
-# 0. Verify quota: GPUS_ALL_REGIONS >= 2
-gcloud compute project-info describe --project=project-c4f86d90-75ff-4766-8cd \
-  --format=json | python3 -c "import json,sys; [print(q['metric'],q['limit'],q['usage']) for q in json.load(sys.stdin)['quotas'] if q['metric']=='GPUS_ALL_REGIONS']"
+# capacity probe (spot g2-standard-4) in the working zones:
+for z in us-east1-c europe-west1-b; do
+  gcloud compute instances create probe-$z --zone=$z --machine-type=g2-standard-4 \
+    --provisioning-model=SPOT --instance-termination-action=DELETE \
+    --project=project-c4f86d90-75ff-4766-8cd && gcloud compute instances delete probe-$z --zone=$z --quiet
+done
+# If exhausted: probe us-east1-b/d, europe-west1-c/d; edit region/zone in
+# infra/environments/{eu,us,network}/main.tf before applying.
+```
 
-# 1. Recreate infra (parallel eu+us after network)
+## 1. Infra (≈12 min, parallel)
+
+```bash
 cd infra/environments/network && terraform init && terraform apply
-cd ../eu   && terraform init && terraform apply &   # ~10 min
-cd ../us   && terraform init && terraform apply &
-wait
+cd ../eu && terraform apply & cd ../us && terraform apply & wait
+# EU: system pool only (no GPU). US: spot g2-standard-4 min 1 (GPU node comes up with the cluster).
+```
 
-# 2. Credentials (contexts come back as gke_...; rename to llmd-poc-eu/us)
+## 2. Credentials + gateway stack (≈5 min, parallel)
+
+```bash
 gcloud container clusters get-credentials llmd-poc-eu --zone europe-west1-b --project project-c4f86d90-75ff-4766-8cd
 gcloud container clusters get-credentials llmd-poc-us --zone us-east1-c      --project project-c4f86d90-75ff-4766-8cd
-
-# 3. Gateway stack + GMP (both clusters)
+kubectl config rename-context <gke_..._eu> llmd-poc-eu   # if needed
+kubectl config rename-context <gke_..._us> llmd-poc-us
 k8s/install-spoke.sh llmd-poc-eu
 k8s/install-spoke.sh llmd-poc-us
 gcloud container clusters update llmd-poc-eu --zone europe-west1-b --enable-managed-prometheus
 gcloud container clusters update llmd-poc-us --zone us-east1-c      --enable-managed-prometheus
-
-# 4. New IPs -> manifests (terraform output gives the new addresses;
-#    sed them into these files, replacing the 2026-11-11 values):
-#    k8s/region-eu/envoyproxy.yaml  (loadBalancerIP = eu gateway_ip)
-#    k8s/region-us/envoyproxy.yaml  (loadBalancerIP = us gateway_ip)
-#    k8s/hub/gateway.yaml           (loadBalancerIP = us hub_gateway_ip)
-#    k8s/hub/clusters.yaml          (address: eu/us gateway_ip)
-
-# 5. Workloads per region (ns + envoyproxy + gateway + sim + vllm + monitors + ILB + router)
-#    then hub (configmap + gateway + helm) — exact commands mirror git history
-#    (see commit messages around the region move, 2026-11-11).
-
-# 6. Revalidate: direct-spoke 200s both regions, hub 200, then resume P5:
-#    vLLM ready both regions -> switch regional routers to router-values.envB.yaml
-#    -> direct-spoke + via-hub validation -> tests/t6_prefix_cache.py
 ```
 
-## Invariants (do not re-derive)
+## 3. IPs → manifests (2 min)
 
-- versions.lock pins everything; llm-d-router v1.0.0 contains the multicluster plugins (alpha — keep `allow-experimental-plugins`).
-- GKE: Gateway `spec.addresses` does NOT bind IPs (externalIPs denied) — use the EnvoyProxy patch (already in the files).
-- vLLM on g2-standard-4 (16 GB) needs `--enforce-eager` (dynamo OOMs) and ≤14Gi pod limit.
-- vLLM pods need the `nvidia.com/gpu` toleration and `strategy: Recreate` (one GPU per region).
-- EPP chart defaults request 8 CPU — keep the 500m override in the values files.
+Static IPs change on rebuild. Read `terraform output` per env and sed into:
+
+| File | Field |
+|---|---|
+| `k8s/region-eu/envoyproxy.yaml` | `loadBalancerIP` = eu `gateway_ip` |
+| `k8s/region-us/envoyproxy.yaml` | `loadBalancerIP` = us `gateway_ip` |
+| `k8s/hub/gateway.yaml` | `loadBalancerIP` = us `hub_gateway_ip` |
+| `k8s/hub/clusters.yaml` | `address:` eu/us gateway IPs |
+| `tests/*.sh`, `tests/*.py` | `HUB`/`HUB_IP` constants |
+| `k8s/hub/clusters.yaml` | `metricsAddress` = **system node internal IPs** (`kubectl get nodes -o wide`), `metricsPort: "30090"` |
+
+## 4. Workloads (≈5 min + ~10 min model download)
+
+Per region (EU first): `create ns llmd-serving` → `envoyproxy.yaml` → `gateway.yaml` →
+sims (`k8s/region-eu/sim.yaml` for EU — real model name; `k8s/region/sim.yaml` for US) →
+`podmonitoring.yaml` (+ `region-us/vllm-podmonitoring.yaml` in US) →
+`region-*/metrics-nodeport.yaml` → router helm (`k8s/region/router-values.yaml` EU,
+`router-values.envB.yaml` US — US points at the real vLLM).
+Then vLLM in US (`k8s/region/vllm.yaml`), hub (configmap + `k8s/hub/gateway.yaml` +
+`k8s/hub/router-values.yaml`). Exact command sequence: see git history of 2026-11-12.
+Firewall rule (hub's cross-cluster scrape): recreate
+`llmd-poc-xcluster-metrics` (tcp:9090,30090 from 10.12.0.0/14,10.24.0.0/14) if not
+moved into terraform by then.
+
+## 5. Validate + continue
+
+```bash
+tests/showcase.sh            # ~5-min feature tour; expect all PASS
+```
+
+Then: P7 (KEDA — needs `featureGates: ["flowControl"]` on the regional EPP,
+finding F2) and/or P8 (final report + teardown).
+
+## Invariants (hard-won, do not rediscover)
+
+- **GPU:** one L4 project-wide; spot g2-standard-4 (16 GB) → vLLM needs
+  `--enforce-eager` and ≤14 Gi pod limit; GPU toleration; `strategy: Recreate`.
+- **Gateway:** `spec.addresses` fails on GKE (externalIPs denied) → EnvoyProxy
+  `loadBalancerIP` patch (class-level for regional, per-Gateway `infrastructure.parametersRef` for hub; no namespace field in v1).
+- **EPP:** chart default requests 8 CPU — keep 500m override. All `multicluster-*`
+  plugins are alpha → `allow-experimental-plugins`. Flow control is OFF by
+  default (`featureGates: ["flowControl"]`). Tie-pin direction is unstable per boot.
+- **Observability:** GMP needs `roles/monitoring.metricWriter` on node SAs;
+  vLLM pod needs its own ClusterPodMonitoring; Monitoring timeSeries API needs
+  an explicit `interval`. Dashboard id: `ed86ce2c-3d60-4da8-9247-86ec377db398` (rebuilds from `dashboards/llmd-poc.json`).
+- **Sims:** EU sims serve the REAL model name (T3/T7/T9 evidence); sim ctx
+  `--max-model-len=8192`; `x-inference-pod` header is sim-emitted (not present
+  on real vLLM responses — use EPP metadata/logs there).
+- **Evidence:** all test JSONL lives in `docs/results/p4|p5|p6/`; PLAN.md §P5
+  records the hybrid design and its claim boundaries.
