@@ -15,12 +15,21 @@ say()  { printf '\n\033[1m=== %s ===\033[0m\n' "$1"; }
 pass() { printf '  \033[32mPASS\033[0m %s\n' "$1"; }
 info() { printf '      %s\n' "$1"; }
 
-policy() { # apply a hub policy and wait for rollout + settle
+policy() { # apply a hub policy, wait for rollout, then wait until serving warm
   helm upgrade -i llmd-hub oci://ghcr.io/llm-d/charts/llm-d-router-gateway \
     --version v1.0.0 --kube-context llmd-poc-us --namespace llmd-serving \
     -f "${REPO_ROOT}/k8s/hub/$1" >/dev/null
   kubectl --context llmd-poc-us -n llmd-serving rollout status deploy/llmd-hub-epp --timeout=180s >/dev/null
-  sleep 5
+  # the single-replica rollout races probes (one 500 per cutover, finding F5/P4):
+  # wait until a probe succeeds before measuring
+  for i in $(seq 1 12); do
+    code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' -X POST "http://${HUB}/v1/chat/completions" \
+      -H 'Content-Type: application/json' \
+      -d "{\"model\":\"${REAL}\",\"messages\":[{\"role\":\"user\",\"content\":\"warmup\"}],\"max_tokens\":2}" 2>/dev/null || true)
+    [ "$code" = "200" ] && return 0
+    sleep 3
+  done
+  echo "  (warn: policy $1 never went warm)" >&2
 }
 
 probe() { # probe <n> -> prints "region,pod,http" per request
