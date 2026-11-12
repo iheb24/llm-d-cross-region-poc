@@ -83,6 +83,9 @@ spec:
             httpGet:
               path: /health
               port: 8000
+            # Multi-minute engine init (eager, 4 vCPU): without this delay the
+            # liveness probe restart-loops the container before it can serve.
+            initialDelaySeconds: 600
             periodSeconds: 30
       volumes:
         - name: model-cache

@@ -16,7 +16,7 @@ spec:
           type: StrategicMerge
           value:
             spec:
-              loadBalancerIP: 34.78.58.227
+              loadBalancerIP: 104.155.26.156
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass

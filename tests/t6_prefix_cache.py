@@ -13,8 +13,9 @@ vllm /metrics via kubectl port-forward.
 """
 import json, subprocess, sys, time, urllib.request
 
-HUB = "146.148.64.26"
+HUB = "136.108.168.11"
 MODEL = "Qwen/Qwen2.5-Coder-14B-Instruct-AWQ"
+MODEL_BY_REGION = {"eu": "llmd-poc-sim", "us": MODEL}   # hybrid: EU serves sims
 CTX = {"eu": "llmd-poc-eu", "us": "llmd-poc-us"}
 PF_PORT = {"eu": 18001, "us": 18002}
 REPO = subprocess.run(["git", "-C", sys.path[0], "rev-parse", "--show-toplevel"],
@@ -59,8 +60,8 @@ def make_prefix(nonce, target_words=2400):
     words = para.split()
     return " ".join(words * (target_words // len(words) + 1))
 
-def send(suffix, prefix):
-    body = json.dumps({"model": MODEL, "max_tokens": 8, "stream": True,
+def send(suffix, prefix, region="us"):
+    body = json.dumps({"model": MODEL_BY_REGION[region], "max_tokens": 8, "stream": True,
                        "messages": [{"role": "system", "content": prefix},
                                     {"role": "user", "content": suffix}]}).encode()
     req = urllib.request.Request(f"http://{HUB}/v1/chat/completions", data=body,
@@ -81,30 +82,34 @@ def main():
     records = []
     for region in ("eu", "us"):
         apply_policy(region)
-        pf = start_pf(region)
+        # Env B-hybrid (GPUS_ALL_REGIONS=1): real vLLM only in US. EU requests go
+        # to sims — a cold-reference with sim semantics, no real cache counters.
+        pf = start_pf(region) if region == "us" else None
         try:
             prefix = make_prefix(f"{nonce}-{region}")
-            c0 = counters(region)
-            ttft_cold, total_cold, h = send("Summarize the handbook in one word.", prefix)
+            c0 = counters(region) if pf else None
+            ttft_cold, total_cold, h = send("Summarize the handbook in one word.", prefix, region)
             time.sleep(1)
-            c1 = counters(region)
-            ttft_warm, total_warm, h2 = send("Now say just 'done'.", prefix)
+            c1 = counters(region) if pf else None
+            ttft_warm, total_warm, h2 = send("Now say just 'done'.", prefix, region)
             time.sleep(1)
-            c2 = counters(region)
+            c2 = counters(region) if pf else None
             records.append({
                 "region": region,
+                "serving": "vllm" if pf else "sim (cold-reference)",
                 "pod": h2.get("x-inference-pod", h.get("x-inference-pod")),
                 "prefix_words": len(prefix.split()),
                 "cold": {"ttft_s": round(ttft_cold, 3), "total_s": round(total_cold, 3)},
                 "warm": {"ttft_s": round(ttft_warm, 3), "total_s": round(total_warm, 3),
                          "ttft_ratio": round(ttft_warm / ttft_cold, 3) if ttft_cold else None},
                 "counters_before": c0, "counters_mid": c1, "counters_after": c2,
-                "hits_delta": c2.get("hits", 0) - c0.get("hits", 0),
-                "queries_delta": c2.get("queries", 0) - c0.get("queries", 0),
+                "hits_delta": (c2.get("hits", 0) - c0.get("hits", 0)) if pf else None,
+                "queries_delta": (c2.get("queries", 0) - c0.get("queries", 0)) if pf else None,
                 "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             })
         finally:
-            pf.terminate()
+            if pf:
+                pf.terminate()
     with open(OUT, "a") as f:
         for r in records:
             f.write(json.dumps(r) + "\n")

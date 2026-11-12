@@ -7,7 +7,7 @@ set -uo pipefail
 OUT="${1:?output.jsonl}"
 INTERVAL="${2:-2}"
 CASE="${3:-t4}"
-HUB_IP="146.148.64.26"
+HUB_IP="136.108.168.11"
 
 echo "probe-loop: case=${CASE} interval=${INTERVAL}s -> ${OUT} (pid $$)"
 : > "${OUT}"
