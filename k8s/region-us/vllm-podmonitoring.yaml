@@ -1,0 +1,15 @@
+# GMP scrape for the real vLLM pod (US). The existing vllm:* series in Cloud
+# Monitoring come from the sims; prefix-cache truth (vllm:prefix_cache_hits_total,
+# vllm:prefix_cache_queries_total) only exists here.
+apiVersion: monitoring.googleapis.com/v1
+kind: ClusterPodMonitoring
+metadata:
+  name: llmd-vllm-metrics
+spec:
+  selector:
+    matchLabels:
+      app: llmd-vllm
+  endpoints:
+    - port: 8000
+      path: /metrics
+      interval: 15s
