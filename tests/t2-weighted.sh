@@ -8,7 +8,7 @@ set -euo pipefail
 
 N="${1:-200}"
 OUT="${2:?output.jsonl}"
-HUB_IP="35.231.239.163"
+HUB_IP="34.75.150.223"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 export DOCKER_CONFIG="${DOCKER_CONFIG:-$(mktemp -d)}"

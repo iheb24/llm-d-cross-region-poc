@@ -6,7 +6,7 @@
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-HUB="35.231.239.163"
+HUB="34.75.150.223"
 REAL="Qwen/Qwen2.5-Coder-14B-Instruct-AWQ"
 export DOCKER_CONFIG="${DOCKER_CONFIG:-$(mktemp -d)}"
 [ -s "${DOCKER_CONFIG}/config.json" ] || echo '{}' > "${DOCKER_CONFIG}/config.json"

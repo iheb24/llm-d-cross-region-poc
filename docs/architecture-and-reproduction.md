@@ -69,6 +69,9 @@ for e in network eu us; do cp infra/environments/$e/terraform.tfvars.example inf
 
 # 1) Capacity probe for the GPU zone (spot g2-standard-4); change regions/zones in
 #    infra/environments/*/main.tf if probing elsewhere, keeping CIDRs as-is.
+#    NOTE: probe only AFTER any teardown has fully completed — a GPU node still
+#    draining holds the single project-wide GPU slot and makes probes falsely
+#    report exhaustion (observed 2026-11-13).
 gcloud compute instances create probe-$ZONE --zone=$ZONE --machine-type=g2-standard-4 \
   --provisioning-model=SPOT --instance-termination-action=DELETE --project=$PROJECT \
   && gcloud compute instances delete probe-$ZONE --zone=$ZONE --quiet
@@ -103,7 +106,8 @@ helm upgrade -i llmd-router oci://ghcr.io/llm-d/charts/llm-d-router-gateway --ve
 kubectl --context llmd-poc-us create namespace llmd-serving
 kubectl --context llmd-poc-us apply -f k8s/region-us/envoyproxy.yaml -f k8s/region-us/gateway.yaml \
   -f k8s/region/sim.yaml -f k8s/region/vllm.yaml -f k8s/region/podmonitoring.yaml \
-  -f k8s/region-us/vllm-podmonitoring.yaml -f k8s/region-us/metrics-nodeport.yaml
+  -f k8s/region-us/vllm-podmonitoring.yaml -f k8s/region-us/metrics-nodeport.yaml \
+  -f k8s/region-us/pressure-sim.yaml
 helm upgrade -i llmd-router oci://ghcr.io/llm-d/charts/llm-d-router-gateway --version v1.0.0 \
   --kube-context llmd-poc-us -n llmd-serving -f k8s/region/router-values.envB.yaml
 kubectl --context llmd-poc-us -n llmd-serving create configmap llmd-hub-clusters --from-file=k8s/hub/clusters.yaml
