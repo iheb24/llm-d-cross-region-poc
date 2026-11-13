@@ -7,7 +7,7 @@
 endpoints:
   - name: eu
     namespace: llmd-poc
-    address: 104.155.26.156
+    address: 34.13.255.134
     port: "80"
     labels:
       region: eu
@@ -15,7 +15,7 @@ endpoints:
       metricsPort: "30090"
   - name: us
     namespace: llmd-poc
-    address: 34.74.158.67
+    address: 104.196.41.167
     port: "80"
     labels:
       region: us

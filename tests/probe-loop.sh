@@ -7,7 +7,7 @@ set -uo pipefail
 OUT="${1:?output.jsonl}"
 INTERVAL="${2:-2}"
 CASE="${3:-t4}"
-HUB_IP="136.108.168.11"
+HUB_IP="35.231.239.163"
 MODEL="${MODEL:-llmd-poc-sim}"   # real model: Qwen/Qwen2.5-Coder-14B-Instruct-AWQ
 
 echo "probe-loop: case=${CASE} interval=${INTERVAL}s -> ${OUT} (pid $$)"
