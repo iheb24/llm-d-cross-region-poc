@@ -19,7 +19,7 @@ router:
     targetPorts:
       - number: 8000
     matchLabels:
-      app: llmd-vllm
+      llmd-pool: vllm
 
   inferencePool:
     create: true

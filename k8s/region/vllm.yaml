@@ -35,6 +35,7 @@ spec:
     metadata:
       labels:
         app: llmd-vllm
+        llmd-pool: vllm
     spec:
       # GKE GPU nodes carry the nvidia.com/gpu=present:NoSchedule taint;
       # without this toleration the pod never triggers GPU scale-up.

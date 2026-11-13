@@ -31,17 +31,17 @@ sleep 3
 MODEL="$REAL" "${REPO_ROOT}/tests/probe-loop.sh" "${OUTDIR}/t3-probes.jsonl" 2 t3-overflow & PROBE=$!
 sleep 15
 
-echo "BASELINE-END $(date -u +%H:%M:%SZ) — starting load (12 workers x 120s (v3: usage-limit 0.15))"
-PROMPT=$(python3 -c "print('Explain distributed consensus in depth. ' * 150)")
-for w in $(seq 1 12); do
-  ( end=$((SECONDS + 120)); while [ $SECONDS -lt $end ]; do
+echo "BASELINE-END $(date -u +%H:%M:%SZ) — starting load (20 workers x 150s, 3.5k-token prompts, 512 out (deep: KV-driven))"
+PROMPT=$(python3 -c "print('Explain distributed consensus in depth. ' * 230)")
+for w in $(seq 1 20); do
+  ( end=$((SECONDS + 150)); while [ $SECONDS -lt $end ]; do
       curl -sS -m 60 -o /dev/null -X POST "http://${HUB_IP}/v1/chat/completions" \
         -H 'Content-Type: application/json' \
-        -d "{\"model\":\"${REAL}\",\"messages\":[{\"role\":\"user\",\"content\":\"${PROMPT} w${w}\"}],\"max_tokens\":256}" 2>/dev/null || true
+        -d "{\"model\":\"${REAL}\",\"messages\":[{\"role\":\"user\",\"content\":\"${PROMPT} w${w}\"}],\"max_tokens\":512}" 2>/dev/null || true
     done ) &
 done
 LOAD_PIDS=$(jobs -p)
-sleep 120
+sleep 150
 echo "LOAD-END $(date -u +%H:%M:%SZ) — waiting for workers to drain"
 wait $LOAD_PIDS 2>/dev/null
 echo "RECOVERY window 60s"
