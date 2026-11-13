@@ -15,7 +15,7 @@ import json, subprocess, sys, time, urllib.request
 
 HUB = "35.231.239.163"
 MODEL = "Qwen/Qwen2.5-Coder-14B-Instruct-AWQ"
-MODEL_BY_REGION = {"eu": "llmd-poc-sim", "us": MODEL}   # hybrid: EU serves sims
+MODEL_BY_REGION = {"eu": MODEL, "us": MODEL}  # both regions serve the real name (EU via sims)
 CTX = {"eu": "llmd-poc-eu", "us": "llmd-poc-us"}
 PF_PORT = {"eu": 18001, "us": 18002}
 REPO = subprocess.run(["git", "-C", sys.path[0], "rev-parse", "--show-toplevel"],

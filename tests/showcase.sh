@@ -72,6 +72,7 @@ probe 4 | sed 's/^/      /'
 pass "hub->region and region->endpoint are both visible per response"
 
 say "F4 — Prefix cache, real vLLM counters (T6)"
+policy router-values.force-us.yaml   # pin: cold+warm must hit the same real endpoint
 PF=$(kubectl --context llmd-poc-us -n llmd-serving port-forward deploy/llmd-vllm 18002:8000 >/dev/null 2>&1 & echo $!)
 sleep 3
 hits() { curl -sS -m 5 localhost:18002/metrics 2>/dev/null | grep '^vllm:prefix_cache_hits_total' | awk '{print $2}'; }
