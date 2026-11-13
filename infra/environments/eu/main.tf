@@ -14,8 +14,8 @@ module "cluster" {
   source     = "../../modules/cluster"
   project_id = var.project_id
 
-  region                 = "europe-west1"
-  zone                   = "europe-west1-b"
+  region                 = "europe-west4"
+  zone                   = "europe-west4-b"
   cluster_name           = "llmd-poc-eu"
   network_name           = "llmd-poc-vpc"
   subnet_name            = "llmd-poc-eu"
@@ -47,5 +47,5 @@ module "cluster" {
 resource "google_compute_address" "gateway" {
   name    = "llmd-poc-eu-gw"
   project = var.project_id
-  region  = "europe-west1"
+  region  = "europe-west4"
 }
