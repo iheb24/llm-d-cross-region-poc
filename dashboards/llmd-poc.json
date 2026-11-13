@@ -1,131 +1,172 @@
 {
-  "displayName": "llm-d Cross-Region PoC — Evidence Dashboard",
-  "gridLayout": {
-    "columns": "2",
-    "widgets": [
+ "displayName": "llm-d Cross-Region PoC \u2014 Evidence Dashboard",
+ "gridLayout": {
+  "columns": "2",
+  "widgets": [
+   {
+    "title": "EPP pool queue size (per cluster) \u2014 T3 overflow signal",
+    "xyChart": {
+     "dataSets": [
       {
-        "title": "EPP pool queue size (per cluster) — T3 overflow signal",
-        "xyChart": {
-          "dataSets": [{
-            "timeSeriesQuery": {
-              "timeSeriesFilter": {
-                "filter": "metric.type=\"prometheus.googleapis.com/llm_d_epp_average_queue_size/gauge\"",
-                "aggregation": {"alignmentPeriod": "60s", "perSeriesAligner": "ALIGN_MEAN"}
-              }
-            },
-            "plotType": "LINE"
-          }]
+       "timeSeriesQuery": {
+        "timeSeriesFilter": {
+         "filter": "metric.type=\"prometheus.googleapis.com/llm_d_epp_average_queue_size/gauge\"",
+         "aggregation": {
+          "alignmentPeriod": "60s",
+          "perSeriesAligner": "ALIGN_MEAN"
+         }
         }
-      },
-      {
-        "title": "EPP pool KV-cache utilization (per cluster)",
-        "xyChart": {
-          "dataSets": [{
-            "timeSeriesQuery": {
-              "timeSeriesFilter": {
-                "filter": "metric.type=\"prometheus.googleapis.com/llm_d_epp_average_kv_cache_utilization/gauge\"",
-                "aggregation": {"alignmentPeriod": "60s", "perSeriesAligner": "ALIGN_MEAN"}
-              }
-            },
-            "plotType": "LINE"
-          }]
-        }
-      },
-      {
-        "title": "Ready endpoints (per cluster) — T4 pool-down visibility",
-        "xyChart": {
-          "dataSets": [{
-            "timeSeriesQuery": {
-              "timeSeriesFilter": {
-                "filter": "metric.type=\"prometheus.googleapis.com/llm_d_epp_ready_endpoints/gauge\"",
-                "aggregation": {"alignmentPeriod": "60s", "perSeriesAligner": "ALIGN_MEAN"}
-              }
-            },
-            "plotType": "LINE"
-          }]
-        }
-      },
-      {
-        "title": "vLLM prefix-cache hits & queries (rate) — T6/T7 cache truth",
-        "xyChart": {
-          "dataSets": [
-            {
-              "timeSeriesQuery": {
-                "timeSeriesFilter": {
-                  "filter": "metric.type=\"prometheus.googleapis.com/vllm:prefix_cache_hits_total/counter\"",
-                  "aggregation": {"alignmentPeriod": "60s", "perSeriesAligner": "ALIGN_RATE"}
-                }
-              },
-              "plotType": "LINE"
-            },
-            {
-              "timeSeriesQuery": {
-                "timeSeriesFilter": {
-                  "filter": "metric.type=\"prometheus.googleapis.com/vllm:prefix_cache_queries_total/counter\"",
-                  "aggregation": {"alignmentPeriod": "60s", "perSeriesAligner": "ALIGN_RATE"}
-                }
-              },
-              "plotType": "LINE"
-            }
-          ]
-        }
-      },
-      {
-        "title": "vLLM KV cache usage % (US real endpoint)",
-        "xyChart": {
-          "dataSets": [{
-            "timeSeriesQuery": {
-              "timeSeriesFilter": {
-                "filter": "metric.type=\"prometheus.googleapis.com/vllm:kv_cache_usage_perc/gauge\"",
-                "aggregation": {"alignmentPeriod": "60s", "perSeriesAligner": "ALIGN_MEAN"}
-              }
-            },
-            "plotType": "LINE"
-          }]
-        }
-      },
-      {
-        "title": "vLLM requests running (US real endpoint) — T3 load absorption",
-        "xyChart": {
-          "dataSets": [{
-            "timeSeriesQuery": {
-              "timeSeriesFilter": {
-                "filter": "metric.type=\"prometheus.googleapis.com/vllm:num_requests_running/gauge\"",
-                "aggregation": {"alignmentPeriod": "60s", "perSeriesAligner": "ALIGN_MEAN"}
-              }
-            },
-            "plotType": "LINE"
-          }]
-        }
-      },
-      {
-        "title": "EPP datalayer poll errors (rate) — telemetry health (T4.4/F1)",
-        "xyChart": {
-          "dataSets": [{
-            "timeSeriesQuery": {
-              "timeSeriesFilter": {
-                "filter": "metric.type=\"prometheus.googleapis.com/llm_d_epp_datalayer_poll_errors_total/counter\"",
-                "aggregation": {"alignmentPeriod": "60s", "perSeriesAligner": "ALIGN_RATE"}
-              }
-            },
-            "plotType": "LINE"
-          }]
-        }
-      },
-      {
-        "title": "Flow-control queue size (T3 mechanism)",
-        "xyChart": {
-          "dataSets": [{
-            "timeSeriesQuery": {
-              "timeSeriesFilter": {
-                "filter": "metric.type=\"prometheus.googleapis.com/llm_d_epp_flow_control_queue_size/gauge\"",
-                "aggregation": {"alignmentPeriod": "60s", "perSeriesAligner": "ALIGN_MEAN"}
-              }
-            },
-            "plotType": "LINE"
-          }]
-        }
+       },
+       "plotType": "LINE"
       }
-    ]
-  }
+     ]
+    }
+   },
+   {
+    "title": "EPP pool KV-cache utilization (per cluster)",
+    "xyChart": {
+     "dataSets": [
+      {
+       "timeSeriesQuery": {
+        "timeSeriesFilter": {
+         "filter": "metric.type=\"prometheus.googleapis.com/llm_d_epp_average_kv_cache_utilization/gauge\"",
+         "aggregation": {
+          "alignmentPeriod": "60s",
+          "perSeriesAligner": "ALIGN_MEAN"
+         }
+        }
+       },
+       "plotType": "LINE"
+      }
+     ]
+    }
+   },
+   {
+    "title": "Ready endpoints (per cluster) \u2014 T4 pool-down visibility",
+    "xyChart": {
+     "dataSets": [
+      {
+       "timeSeriesQuery": {
+        "timeSeriesFilter": {
+         "filter": "metric.type=\"prometheus.googleapis.com/llm_d_epp_ready_endpoints/gauge\"",
+         "aggregation": {
+          "alignmentPeriod": "60s",
+          "perSeriesAligner": "ALIGN_MEAN"
+         }
+        }
+       },
+       "plotType": "LINE"
+      }
+     ]
+    }
+   },
+   {
+    "title": "vLLM prefix-cache hits & queries (rate) \u2014 T6/T7 cache truth",
+    "xyChart": {
+     "dataSets": [
+      {
+       "timeSeriesQuery": {
+        "timeSeriesFilter": {
+         "filter": "metric.type=\"prometheus.googleapis.com/vllm:prefix_cache_hits_total/counter\" AND resource.labels.cluster=\"llmd-poc-us\" AND resource.labels.namespace=\"llmd-serving\" AND resource.labels.pod=monitoring.regex.full_match(\"llmd-vllm-.*\")",
+         "aggregation": {
+          "alignmentPeriod": "60s",
+          "perSeriesAligner": "ALIGN_RATE"
+         }
+        }
+       },
+       "plotType": "LINE"
+      },
+      {
+       "timeSeriesQuery": {
+        "timeSeriesFilter": {
+         "filter": "metric.type=\"prometheus.googleapis.com/vllm:prefix_cache_queries_total/counter\" AND resource.labels.cluster=\"llmd-poc-us\" AND resource.labels.namespace=\"llmd-serving\" AND resource.labels.pod=monitoring.regex.full_match(\"llmd-vllm-.*\")",
+         "aggregation": {
+          "alignmentPeriod": "60s",
+          "perSeriesAligner": "ALIGN_RATE"
+         }
+        }
+       },
+       "plotType": "LINE"
+      }
+     ]
+    }
+   },
+   {
+    "title": "vLLM KV cache usage % (US real endpoint)",
+    "xyChart": {
+     "dataSets": [
+      {
+       "timeSeriesQuery": {
+        "timeSeriesFilter": {
+         "filter": "metric.type=\"prometheus.googleapis.com/vllm:kv_cache_usage_perc/gauge\" AND resource.labels.cluster=\"llmd-poc-us\" AND resource.labels.namespace=\"llmd-serving\" AND resource.labels.pod=monitoring.regex.full_match(\"llmd-vllm-.*\")",
+         "aggregation": {
+          "alignmentPeriod": "60s",
+          "perSeriesAligner": "ALIGN_MEAN"
+         }
+        }
+       },
+       "plotType": "LINE"
+      }
+     ]
+    }
+   },
+   {
+    "title": "vLLM requests running (US real endpoint) \u2014 T3 load absorption",
+    "xyChart": {
+     "dataSets": [
+      {
+       "timeSeriesQuery": {
+        "timeSeriesFilter": {
+         "filter": "metric.type=\"prometheus.googleapis.com/vllm:num_requests_running/gauge\" AND resource.labels.cluster=\"llmd-poc-us\" AND resource.labels.namespace=\"llmd-serving\" AND resource.labels.pod=monitoring.regex.full_match(\"llmd-vllm-.*\")",
+         "aggregation": {
+          "alignmentPeriod": "60s",
+          "perSeriesAligner": "ALIGN_MEAN"
+         }
+        }
+       },
+       "plotType": "LINE"
+      }
+     ]
+    }
+   },
+   {
+    "title": "EPP datalayer poll errors (rate) \u2014 telemetry health (T4.4/F1)",
+    "xyChart": {
+     "dataSets": [
+      {
+       "timeSeriesQuery": {
+        "timeSeriesFilter": {
+         "filter": "metric.type=\"prometheus.googleapis.com/llm_d_epp_datalayer_poll_errors_total/counter\"",
+         "aggregation": {
+          "alignmentPeriod": "60s",
+          "perSeriesAligner": "ALIGN_RATE"
+         }
+        }
+       },
+       "plotType": "LINE"
+      }
+     ]
+    }
+   },
+   {
+    "title": "Flow-control queue size (T3 mechanism)",
+    "xyChart": {
+     "dataSets": [
+      {
+       "timeSeriesQuery": {
+        "timeSeriesFilter": {
+         "filter": "metric.type=\"prometheus.googleapis.com/llm_d_epp_flow_control_queue_size/gauge\"",
+         "aggregation": {
+          "alignmentPeriod": "60s",
+          "perSeriesAligner": "ALIGN_MEAN"
+         }
+        }
+       },
+       "plotType": "LINE"
+      }
+     ]
+    }
+   }
+  ]
+ }
 }
