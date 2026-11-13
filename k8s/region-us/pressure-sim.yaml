@@ -12,7 +12,7 @@ metadata:
   labels:
     app: llmd-pressure-sim
 spec:
-  replicas: 1
+  replicas: 0   # T3-only tooling: scale to 1 during T3, 0 otherwise (regional cache tests must not land on it)
   strategy:
     type: Recreate
   selector:

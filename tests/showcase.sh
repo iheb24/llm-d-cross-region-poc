@@ -6,12 +6,15 @@
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-HUB="34.75.150.223"
+HUB=$(kubectl --context llmd-poc-us get gateway llmd-hub-gateway -n llmd-serving -o jsonpath='{.status.addresses[0].value}')
+US_GW=$(kubectl --context llmd-poc-us get gateway llm-d-inference-gateway -n llmd-serving -o jsonpath='{.status.addresses[0].value}')
+EU_GW=$(kubectl --context llmd-poc-eu get gateway llm-d-inference-gateway -n llmd-serving -o jsonpath='{.status.addresses[0].value}')
 REAL="Qwen/Qwen2.5-Coder-14B-Instruct-AWQ"
 export DOCKER_CONFIG="${DOCKER_CONFIG:-$(mktemp -d)}"
 [ -s "${DOCKER_CONFIG}/config.json" ] || echo '{}' > "${DOCKER_CONFIG}/config.json"
 
 say()  { printf '\n\033[1m=== %s ===\033[0m\n' "$1"; }
+echo "  hub=$HUB us-gw=$US_GW eu-gw=$EU_GW"
 pass() { printf '  \033[32mPASS\033[0m %s\n' "$1"; }
 info() { printf '      %s\n' "$1"; }
 
@@ -72,11 +75,12 @@ probe 4 | sed 's/^/      /'
 pass "hub->region and region->endpoint are both visible per response"
 
 say "F4 — Prefix cache, real vLLM counters (T6)"
+kubectl --context llmd-poc-us -n llmd-serving scale deploy/llmd-pressure-sim --replicas=0 >/dev/null 2>&1 || true
 policy router-values.force-us.yaml   # pin: cold+warm must hit the same real endpoint
 PF=$(kubectl --context llmd-poc-us -n llmd-serving port-forward deploy/llmd-vllm 18002:8000 >/dev/null 2>&1 & echo $!)
 sleep 3
 hits() { curl -sS -m 5 localhost:18002/metrics 2>/dev/null | grep '^vllm:prefix_cache_hits_total' | awk '{print $2}'; }
-PREFIX=$(python3 -c "print('Handbook section: hub routing, cache affinity, failover. ' * 120)")
+PREFIX=$(python3 -c "import time; print(f'Runbook rev {int(time.time())}: hub routing, cache affinity, failover, measured recovery. ' * 200)")
 h0=$(hits)
 cold=$(curl -sS -m 120 -N -o /dev/null -w '%{time_starttransfer}' -X POST "http://${HUB}/v1/chat/completions" -H 'Content-Type: application/json' \
   -d "{\"model\":\"${REAL}\",\"stream\":true,\"max_tokens\":8,\"messages\":[{\"role\":\"system\",\"content\":\"${PREFIX} A\"},{\"role\":\"user\",\"content\":\"one word\"}]}")
@@ -111,7 +115,7 @@ done
 say "F6 — Latency: hub overhead vs cross-region (T9)"
 for path in direct-us hub hub-eu; do
   case $path in
-    direct-us) url="http://34.74.158.67/v1/chat/completions";;
+    direct-us) url="http://${US_GW}/v1/chat/completions";;
     hub)       url="http://${HUB}/v1/chat/completions";;
     hub-eu)    policy router-values.force-eu.yaml; url="http://${HUB}/v1/chat/completions";;
   esac

@@ -128,7 +128,7 @@ gcloud compute firewall-rules create llmd-poc-xcluster-metrics --network=llmd-po
 | Smoke all proven features (~10 min) | `tests/showcase.sh` | F1–F6 verdicts; `--with-failure` adds the pool-down probe |
 | T1 deterministic | `tests/t1-deterministic.sh eu 20 out.jsonl` then `... us ...` | 20/20 in forced region |
 | T2 weighted | `tests/t2-weighted.sh 200 out.jsonl` | split within chi-square tolerance |
-| T3 overflow (synthetic pressure) | deploy `k8s/region-us/pressure-sim.yaml`, then `tests/t3-synthetic-pressure.sh <dir>` | US at rest → EU under ramp → US after reset, 100 % 200 |
+| T3 overflow (synthetic pressure) | `kubectl --context llmd-poc-us -n llmd-serving scale deploy/llmd-pressure-sim --replicas=1`, wait ready, then `tests/t3-synthetic-pressure.sh <dir>`; scale back to 0 after | US at rest → EU under ramp → US after reset, 100 % 200 |
 | T4 failure | `MODEL=Qwen/... tests/probe-loop.sh out.jsonl 2 t4 &` then scale the EU/US envoy deployment or the US vLLM deployment to 0, restore | failure/recovery windows recorded |
 | T6 prefix cache | `python3 tests/t6_prefix_cache.py out.jsonl` | cold TTFT ≫ warm; `vllm:prefix_cache_hits_total` jumps on reuse |
 | T7 multi-turn | `python3 tests/t7_multiturn.py out.jsonl` | turns pinned; per-turn reuse ≥80 %; migration cold; return warm |
