@@ -70,6 +70,18 @@ resource "google_compute_router" "router" {
   network = google_compute_network.vpc.id
 }
 
+# Reserved egress IPs (one per region): the hub's NAT source is a stable,
+# allowlistable address for gateway loadBalancerSourceRanges. AUTO_ONLY was
+# rejected: auto IPs are ephemeral and get reallocated (observed 2026-11-14,
+# a probe VM was temporarily assigned an IP we had just allowlisted).
+resource "google_compute_address" "nat_ip" {
+  for_each = { for s in var.subnets : s.region => s }
+
+  name    = "${var.network_name}-nat-ip-${each.key}"
+  project = var.project_id
+  region  = each.key
+}
+
 resource "google_compute_router_nat" "nat" {
   for_each = google_compute_router.router
 
@@ -77,6 +89,7 @@ resource "google_compute_router_nat" "nat" {
   project                            = var.project_id
   region                             = each.key
   router                             = each.value.name
-  nat_ip_allocate_option             = "AUTO_ONLY"
+  nat_ip_allocate_option             = "MANUAL_ONLY"
+  nat_ips                            = [google_compute_address.nat_ip[each.key].id]
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }

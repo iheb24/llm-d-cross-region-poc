@@ -27,9 +27,11 @@ OPERATOR_IP=$(curl -sS -4 -m 10 ifconfig.me)
 [ -n "$OPERATOR_IP" ] || { echo "cannot determine operator IPv4"; exit 1; }
 [ -n "$NAT_IPS" ] || { echo "no NAT IPs discovered for us-east1 router"; exit 1; }
 
+# operator + hub NAT egress + both PoC pod ranges (intra-VPC hub -> same-region
+# gateway does NOT traverse the NAT, it keeps the pod source IP)
 RANGES="["
 for ip in $OPERATOR_IP $NAT_IPS; do RANGES+="\"$ip/32\", "; done
-RANGES="${RANGES%, }]"
+RANGES+="\"10.12.0.0/14\", \"10.24.0.0/14\"]"
 echo "eu=$EU_GW us=$US_GW hub=$HUB_GW operator=$OPERATOR_IP nat=[$NAT_IPS]"
 
 python3 - "$EU_GW" "$US_GW" "$HUB_GW" "$RANGES" <<'EOF'

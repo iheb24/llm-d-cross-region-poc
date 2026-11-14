@@ -16,7 +16,7 @@ spec:
           value:
             spec:
               loadBalancerIP: 34.138.131.34  # boundary-ok: source-locked by loadBalancerSourceRanges (docs/risk-note-public-gateways.md)
-              loadBalancerSourceRanges: ["OPERATOR_IP/32", "136.108.150.255/32"]  # filled by scripts/repoint-ips.sh (operator IP + PoC NAT IPs)
+              loadBalancerSourceRanges: ["OPERATOR_IP/32", "35.237.4.2/32", "10.12.0.0/14", "10.24.0.0/14"]  # filled by scripts/repoint-ips.sh (operator IP + PoC NAT IPs)
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
