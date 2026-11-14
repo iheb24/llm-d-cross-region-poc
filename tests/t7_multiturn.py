@@ -9,7 +9,7 @@ Per turn: hub_region, TTFT, vllm hits/queries deltas. Output: JSONL + stdout.
 """
 import json, subprocess, sys, time, urllib.request
 
-HUB = "34.74.199.152"
+HUB = "34.138.131.34"
 MODEL = "Qwen/Qwen2.5-Coder-14B-Instruct-AWQ"
 SIM_MODEL = "llmd-poc-sim"
 REPO = subprocess.run(["git", "-C", sys.path[0], "rev-parse", "--show-toplevel"],

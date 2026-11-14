@@ -13,7 +13,7 @@ vllm /metrics via kubectl port-forward.
 """
 import json, subprocess, sys, time, urllib.request
 
-HUB = "34.74.199.152"
+HUB = "34.138.131.34"
 MODEL = "Qwen/Qwen2.5-Coder-14B-Instruct-AWQ"
 MODEL_BY_REGION = {"eu": MODEL, "us": MODEL}  # both regions serve the real name (EU via sims)
 CTX = {"eu": "llmd-poc-eu", "us": "llmd-poc-us"}
