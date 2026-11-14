@@ -15,6 +15,9 @@ terraform {
 # trivy:ignore:gcp-0051
 # trivy:ignore:gcp-0056
 resource "google_container_cluster" "primary" {
+  # checkov:skip=CKV_GCP_65: personal PoC project, no Google Workspace group for RBAC
+  # checkov:skip=CKV_GCP_66: binary authorization deferred to production adoption
+  # checkov:skip=CKV_GCP_69: GKE_METADATA is set on every node pool via workload_metadata_config; the cluster's transient default pool is removed on create
   name     = var.cluster_name
   location = var.zone
   project  = var.project_id
@@ -25,6 +28,36 @@ resource "google_container_cluster" "primary" {
   deletion_protection      = false
   remove_default_node_pool = true
   initial_node_count       = 1
+
+  resource_labels = {
+    project     = "llm-d-cross-region-poc"
+    environment = "poc"
+    managed_by  = "terraform"
+  }
+
+  release_channel {
+    channel = "REGULAR"
+  }
+
+  master_auth {
+    client_certificate_config {
+      issue_client_certificate = false
+    }
+  }
+
+  enable_intranode_visibility = true
+
+  network_policy {
+    enabled  = true
+    provider = "CALICO"
+  }
+
+  monitoring_config {
+    enable_components = ["SYSTEM_COMPONENTS"]
+    managed_prometheus {
+      enabled = true
+    }
+  }
 
   private_cluster_config {
     enable_private_nodes    = true
@@ -67,11 +100,17 @@ resource "google_container_node_pool" "system_pool" {
   }
 
   node_config {
-    machine_type = var.system_machine_type
-    image_type   = "COS_CONTAINERD"
+    machine_type    = var.system_machine_type
+    image_type      = "COS_CONTAINERD"
+    service_account = google_service_account.cluster_sa.email
 
     metadata = {
       disable-legacy-endpoints = "true"
+    }
+
+    shielded_instance_config {
+      enable_secure_boot          = true
+      enable_integrity_monitoring = true
     }
 
     workload_metadata_config {
@@ -106,9 +145,19 @@ resource "google_container_node_pool" "gpu_pool" {
   # trivy:ignore:gcp-0050
   # trivy:ignore:gcp-0054
   node_config {
-    machine_type = var.gpu_machine_type
+    machine_type    = var.gpu_machine_type
+    service_account = google_service_account.cluster_sa.email
 
     spot = var.gpu_spot
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+
+    shielded_instance_config {
+      enable_secure_boot          = true
+      enable_integrity_monitoring = true
+    }
 
     guest_accelerator {
       type  = var.gpu_accelerator_type
@@ -126,6 +175,12 @@ resource "google_container_node_pool" "gpu_pool" {
       "https://www.googleapis.com/auth/cloud-platform"
     ]
   }
+}
+
+resource "google_project_iam_member" "metrics_writer" {
+  project = var.project_id
+  role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${google_service_account.cluster_sa.email}"
 }
 
 resource "google_service_account" "cluster_sa" {

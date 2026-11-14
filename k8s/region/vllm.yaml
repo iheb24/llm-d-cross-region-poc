@@ -37,6 +37,10 @@ spec:
         app: llmd-vllm
         llmd-pool: vllm
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       # GKE GPU nodes carry the nvidia.com/gpu=present:NoSchedule taint;
       # without this toleration the pod never triggers GPU scale-up.
       tolerations:
@@ -69,7 +73,14 @@ spec:
               nvidia.com/gpu: "1"
             limits:
               nvidia.com/gpu: "1"
+              cpu: "3"
               memory: 14Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            # runs as root per the vLLM image design (model load + NCCL); RO rootfs
+            # and runAsNonRoot are skipped for that reason (image constraint)
           volumeMounts:
             - name: model-cache
               mountPath: /root/.cache/huggingface

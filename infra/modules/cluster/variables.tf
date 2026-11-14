@@ -2,10 +2,6 @@ variable "project_id" {
   type = string
 }
 
-variable "region" {
-  type = string
-}
-
 variable "zone" {
   description = "Zone for the zonal cluster and its node pools"
   type        = string

@@ -8,6 +8,11 @@
 # Usage: ./t3-overflow.sh <out-dir>
 set -uo pipefail
 
+# never leave probe/scrape loops running if this script dies (they broke
+# commits for two days by appending to evidence files)
+_cleanup() { kill ${PROBE:-} ${SCRAPE:-} ${PF:-} ${PF_SIM:-} ${PF_EPP:-} 2>/dev/null || true; }
+trap _cleanup EXIT INT TERM
+
 OUTDIR="${1:?out-dir}"
 HUB_IP="136.108.168.11"
 REAL="Qwen/Qwen2.5-Coder-14B-Instruct-AWQ"

@@ -36,8 +36,7 @@ kubectl config rename-context <gke_..._eu> llmd-poc-eu   # if needed
 kubectl config rename-context <gke_..._us> llmd-poc-us
 k8s/install-spoke.sh llmd-poc-eu
 k8s/install-spoke.sh llmd-poc-us
-gcloud container clusters update llmd-poc-eu --zone europe-west1-b --enable-managed-prometheus
-gcloud container clusters update llmd-poc-us --zone us-east1-c      --enable-managed-prometheus
+# (GMP is declared in terraform: cluster module monitoring_config.managed_prometheus)
 ```
 
 ## 3. IPs → manifests (2 min)

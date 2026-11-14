@@ -8,6 +8,11 @@
 # CAVEAT: the queue pressure is synthetic (sim fake-metrics); the routing
 # mechanism chain (regional aggregate -> hub scorer -> flip -> recovery) is real.
 set -uo pipefail
+
+# never leave probe/scrape loops running if this script dies (they broke
+# commits for two days by appending to evidence files)
+_cleanup() { kill ${PROBE:-} ${SCRAPE:-} ${PF:-} ${PF_SIM:-} ${PF_EPP:-} 2>/dev/null || true; }
+trap _cleanup EXIT INT TERM
 OUTDIR="${1:?out-dir}"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 mkdir -p "$OUTDIR"

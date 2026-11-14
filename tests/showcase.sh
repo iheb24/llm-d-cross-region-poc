@@ -107,7 +107,6 @@ for t in 1 2 3; do
     -d "{\"model\":\"${REAL}\",\"messages\":${hist},\"max_tokens\":6}" 2>/dev/null || true)
   region=$(printf '%s' "$out" | grep -i '^x-session-token:' | awk '{print $2}' | tr -d '\r' | base64 -d 2>/dev/null | cut -d/ -f2 || true)
   tok=$(printf '%s' "$out" | grep -i '^x-session-token:' | awk '{print $2}' | tr -d '\r' || true)
-  ans=$(printf '%s' "$out" | grep -i '^x-inference-pod:' | awk '{print $2}' | tr -d '\r' || true)
   info "turn $t -> region=${region:-?}"
 done
 [ "$region" = "us" ] && pass "3/3 turns pinned to the same region via x-session-token"

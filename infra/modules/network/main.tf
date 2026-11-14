@@ -26,6 +26,13 @@ resource "google_compute_subnetwork" "subnet" {
   ip_cidr_range            = each.value.node_cidr
   private_ip_google_access = true
 
+  # CKV_GCP_26/61: flow logs feed the WAN-egress cost measurement (PLAN.md §10)
+  log_config {
+    aggregation_interval = "INTERVAL_5_MIN"
+    flow_sampling        = 0.5
+    metadata             = "INCLUDE_ALL_METADATA"
+  }
+
   secondary_ip_range {
     range_name    = each.value.pods_range_name
     ip_cidr_range = each.value.pods_cidr
@@ -35,6 +42,23 @@ resource "google_compute_subnetwork" "subnet" {
     range_name    = each.value.services_range_name
     ip_cidr_range = each.value.services_cidr
   }
+}
+
+# Declared (previously manual, 2026-11-13): hub's cross-cluster EPP metrics
+# scrape (B3). Both pod ranges may reach regional metrics NodePorts.
+resource "google_compute_firewall" "xcluster_metrics" {
+  name        = "llmd-poc-xcluster-metrics"
+  project     = var.project_id
+  network     = google_compute_network.vpc.name
+  description = "PoC B3: cross-cluster EPP metrics scrape (hub <-> regional NodePorts)"
+  priority    = 900
+
+  allow {
+    protocol = "tcp"
+    ports    = ["9090", "30090"]
+  }
+
+  source_ranges = [for s in var.subnets : s.pods_cidr]
 }
 
 resource "google_compute_router" "router" {

@@ -1,5 +1,11 @@
 terraform {
   required_version = ">= 1.0.0"
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "7.41.0"
+    }
+  }
   backend "gcs" {
     bucket = "project-tf-states"
     prefix = "llm-d-cross-region-poc/eu"
@@ -14,7 +20,6 @@ module "cluster" {
   source     = "../../modules/cluster"
   project_id = var.project_id
 
-  region                 = "europe-west4"
   zone                   = "europe-west4-b"
   cluster_name           = "llmd-poc-eu"
   network_name           = "llmd-poc-vpc"
@@ -29,10 +34,10 @@ module "cluster" {
   # Capacity ladder (2026-11-11): spot and on-demand g2-standard-8 both
   # exhausted in europe-west4-a -> try spot g2-standard-4 (separate capacity
   # pool; same 1x L4 24GB GPU, less host CPU/RAM).
-  gpu_spot          = true
-  gpu_machine_type  = "g2-standard-4"
+  gpu_spot           = true
+  gpu_machine_type   = "g2-standard-4"
   gpu_min_node_count = 1
-  gpu_pool_enabled  = false  # Env B-hybrid (2026-11-12): GPUS_ALL_REGIONS=1 globally; the single GPU runs in the US cluster
+  gpu_pool_enabled   = false # Env B-hybrid (2026-11-12): GPUS_ALL_REGIONS=1 globally; the single GPU runs in the US cluster
 
   authorized_ip_ranges = [
     {

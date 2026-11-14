@@ -89,8 +89,7 @@ gcloud container clusters get-credentials llmd-poc-us --zone us-east1-c      --p
 # 4) Gateway stack + GMP per cluster
 k8s/install-spoke.sh llmd-poc-eu
 k8s/install-spoke.sh llmd-poc-us
-gcloud container clusters update llmd-poc-eu --zone europe-west4-b --enable-managed-prometheus
-gcloud container clusters update llmd-poc-us --zone us-east1-c      --enable-managed-prometheus
+# (GMP is now declared in terraform: cluster module monitoring_config.managed_prometheus)
 
 # 5) Repoint IPs: terraform output gateway_ip/hub_gateway_ip -> k8s/region-*/envoyproxy.yaml,
 #    k8s/hub/gateway.yaml, k8s/hub/clusters.yaml, tests/* (HUB constants);
@@ -115,10 +114,8 @@ kubectl --context llmd-poc-us apply -f k8s/hub/gateway.yaml
 helm upgrade -i llmd-hub oci://ghcr.io/llm-d/charts/llm-d-router-gateway --version v1.0.0 \
   --kube-context llmd-poc-us -n llmd-serving -f k8s/hub/router-values.yaml
 
-# 7) Hub's cross-cluster metrics firewall
-gcloud compute firewall-rules create llmd-poc-xcluster-metrics --network=llmd-poc-vpc \
-  --project=$PROJECT --direction=INGRESS --priority=900 --action=ALLOW \
-  --rules=tcp:9090,tcp:30090 --source-ranges=10.12.0.0/14,10.24.0.0/14
+# 7) Hub's cross-cluster metrics firewall is declared in terraform
+#    (infra/modules/network google_compute_firewall.xcluster_metrics) — nothing to run.
 ```
 
 ## 3. Conducting the tests
@@ -141,7 +138,7 @@ Policies live in `k8s/hub/router-values*.yaml` and swap via
 ## 4. Teardown
 
 ```bash
-gcloud compute firewall-rules delete llmd-poc-xcluster-metrics --quiet --project=$PROJECT
+# (firewall rule is terraform-managed now — destroyed by terraform destroy)
 ( cd infra/environments/eu && terraform destroy -auto-approve ) &
 ( cd infra/environments/us && terraform destroy -auto-approve ) &
 wait
