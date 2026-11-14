@@ -11,7 +11,7 @@ Date: 2026-11-13 (sessions of 2026-11-11 → 11-13). Author state: evidence arch
 | 3 | Predictable behavior under injected regional failures | **Demonstrated (measured, incl. negative findings)** | T4: gateway-down ~34 s detect/~23 s recover (14×503); pool-down 87×503 over 3.5 min, real cold start 3m04s; regional-EPP-down = fail-closed 500; metrics-outage = data plane unaffected (48/48) |
 | 4 | Provable hub→region→endpoint decision chain | **Demonstrated** | T5: both decisions per request (`x-session-token` cluster + `x-inference-pod`); negative control (EPP-down removes the evidence) |
 | 5 | Latency overhead: direct / local-hub / cross-region-hub | **Measured** | T9 (Paris client, N=25): direct-US TTFT p50 0.306 s; hub→US p50 0.307 s (hub ≈ +1 ms); hub→EU p50 0.303 s vs direct-EU 0.029 s (+274 ms ≈ two transatlantic legs) |
-| 6 | Session/prefix affinity + actual vLLM cache reuse | **Demonstrated with serving counters** | T6: cold 3.09 s (hits +0) → warm 0.42 s (hits +4096, 7.2×); T7: 3/3 pinned turns, 84–87 % tokens reused/turn, migration cold, return warm-again (81 %) |
+| 6 | Session/prefix affinity + actual vLLM cache reuse | **Demonstrated with serving counters** | T6: cold 3.08 s (hits +0) → warm 0.42 s (hits +4096, 7.3×); T7: 3/3 pinned turns, 84–87 % tokens reused/turn, migration cold, return warm-again (81 %) |
 | 7 | Limitations documented; unsupported claims absent | **Done** | See below |
 
 ## Limitations and non-claims (the honest half of the report)

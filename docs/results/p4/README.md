@@ -35,7 +35,7 @@ Negative control (what "no regional EPP" looks like):
 | T4.1 gateway down | force-eu; scale EU Envoy data plane 0 | ~12 s (NLB drain) | 24 × 503, fast (no hang; rtt flat) | keeps sending EU (forced); no alternative | ~12 s after scale-back (24 503s, then 200 at +12 s) |
 | T4.2a pool down, forced | force-eu; EU sims → 0 | ≤ 2 s | 24 × 503 (`pool empty → ServiceUnavailable`) | pinned by filter — 100% to EU by design | 3 s (14:46:37 → 14:46:40) |
 | T4.2b pool down, default | default policy; US sims → 0 (hub had pinned US) | ≤ 3 s | 25 × 503 over ~60 s | **never rerouted to healthy EU** — pool-down is invisible to the hub's queue/KV aggregates (both read ~0 = "idle") | ~4 s (14:49:04 → 14:49:08) |
-| T4.4 metrics path down | force-eu; delete EU metrics ILB | — | none | 48/48 requests still 200 to EU — data plane independent of telemetry plane | scrape restored on ILB recreate |
+| T4.4 metrics path down | force-eu; delete EU metrics ILB | — | none | 48/48 requests still 200 to EU — data plane independent of telemetry plane. (Pre-window note: seq 1 in the raw file is a single HTTP 500 from the policy-rollout warmup before injection, not part of the 48/48 window.) | scrape restored on ILB recreate |
 
 T4.5 (recovery) is embedded above; no route flapping observed in any case. T4.3 (hub→spoke path interruption via firewall) deferred to P6 — T4.1 exercises the same transport failure signature.
 
