@@ -12,7 +12,7 @@ Output: JSONL per request + summary.
 """
 import json, statistics, subprocess, sys, time, urllib.request
 
-US_GW, EU_GW, HUB = "34.74.158.67", "104.155.26.156", "34.75.150.223"
+US_GW, EU_GW, HUB = "34.74.199.152", "104.155.26.156", "34.75.150.223"
 REAL, SIM = "Qwen/Qwen2.5-Coder-14B-Instruct-AWQ", "Qwen/Qwen2.5-Coder-14B-Instruct-AWQ"  # both regions serve the real name (EU via sims)
 N = int(sys.argv[2]) if len(sys.argv) > 2 else 25
 REPO = subprocess.run(["git", "-C", sys.path[0], "rev-parse", "--show-toplevel"],

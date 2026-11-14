@@ -15,8 +15,8 @@ spec:
           type: StrategicMerge
           value:
             spec:
-              loadBalancerIP: 35.185.1.93  # boundary-ok: source-locked by loadBalancerSourceRanges (docs/risk-note-public-gateways.md)
-              loadBalancerSourceRanges: []  # filled by scripts/repoint-ips.sh (operator IP + PoC NAT IPs)
+              loadBalancerIP: 34.138.131.34  # boundary-ok: source-locked by loadBalancerSourceRanges (docs/risk-note-public-gateways.md)
+              loadBalancerSourceRanges: ["OPERATOR_IP/32", "136.108.150.255/32"]  # filled by scripts/repoint-ips.sh (operator IP + PoC NAT IPs)
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass

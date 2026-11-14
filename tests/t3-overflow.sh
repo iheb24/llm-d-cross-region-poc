@@ -14,7 +14,7 @@ _cleanup() { kill ${PROBE:-} ${SCRAPE:-} ${PF:-} ${PF_SIM:-} ${PF_EPP:-} 2>/dev/
 trap _cleanup EXIT INT TERM
 
 OUTDIR="${1:?out-dir}"
-HUB_IP="136.108.168.11"
+HUB_IP="34.74.199.152"
 REAL="Qwen/Qwen2.5-Coder-14B-Instruct-AWQ"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 mkdir -p "$OUTDIR"
